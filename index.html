@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v9.0.2 - Stabil Geri Dönüş</title>
+    <title>Hoşgünler v9.0.3 - Log Düzeltmeleri</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800;">Hoşgünler v9.0.2</h2>
+    <h2 style="font-weight: 800;">Hoşgünler v9.0.3</h2>
     <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -151,8 +151,16 @@
 
     async function saveProduct() {
         const id = document.getElementById('p_id').value;
-        const newP = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, info: document.getElementById('p_info').value.trim() };
+        const newP = { 
+            name: document.getElementById('p_name').value.trim(), 
+            supplier: document.getElementById('p_supplier_select').value, 
+            buyPrice: parseFloat(document.getElementById('p_buy').value)||0, 
+            sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, 
+            sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, 
+            info: document.getElementById('p_info').value.trim() 
+        };
         if(!newP.name) return;
+
         if(id) {
             const oldP = allProducts.find(x => x.id === id);
             let d = [];
@@ -161,13 +169,16 @@
             if(oldP.buyPrice !== newP.buyPrice) d.push(`Alış: ${formatTRY(oldP.buyPrice)} -> ${formatTRY(newP.buyPrice)}`);
             if(oldP.sellWholesale !== newP.sellWholesale) d.push(`Toptan: ${formatTRY(oldP.sellWholesale)} -> ${formatTRY(newP.sellWholesale)}`);
             if(oldP.sellRetail !== newP.sellRetail) d.push(`Perakende: ${formatTRY(oldP.sellRetail)} -> ${formatTRY(newP.sellRetail)}`);
+            if((oldP.info || "") !== newP.info) d.push(`Bilgi/Raf: ${oldP.info || 'Yok'} -> ${newP.info}`);
+            
             if(d.length > 0) {
                 await db.collection("products").doc(id).update(newP);
                 addAuditLog('guncelleme', `✏️ Güncellendi: ${newP.name}`, d.join('\n'), newP.name);
             }
         } else {
             await db.collection("products").add(newP);
-            addAuditLog('yeni', `✨ Yeni Ürün: ${newP.name}`, `Toptancı: ${newP.supplier}\nPerakende: ${formatTRY(newP.sellRetail)}`, newP.name);
+            let detail = `Toptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nToptan: ${formatTRY(newP.sellWholesale)}\nPerakende: ${formatTRY(newP.sellRetail)}\nBilgi: ${newP.info || '-'}`;
+            addAuditLog('yeni', `✨ Yeni Ürün: ${newP.name}`, detail, newP.name);
         }
         resetProductForm(); showPage('inventory');
     }
