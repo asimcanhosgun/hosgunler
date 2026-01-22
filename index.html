@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v7.8 - Eksik Kart Görünümü</title>
+    <title>Hoşgünler v7.9 - Eksik Logları Aktif</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -22,10 +22,7 @@
         .page { display: none; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 85vh; }
         .active-page { display: block !important; }
 
-        /* Grid Sistemi */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 10px; }
-        
-        /* Kart Tasarımı */
         .item-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .price-buy-card { font-size: 11px; color: var(--danger); font-weight: bold; margin-bottom: 4px; display: none; }
         .price-retail { font-size: 19px; font-weight: 800; color: var(--accent); }
@@ -33,7 +30,6 @@
         .item-card b { font-size: 14px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; margin: 5px 0; }
         .card-actions { display: flex; gap: 4px; margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 8px; }
 
-        /* Masaüstü Tablo */
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; table-layout: fixed; }
         th, td { padding: 12px 10px; border-bottom: 1px solid #f1f1f1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -52,7 +48,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2>Hoşgünler v7.8</h2>
+    <h2>Hoşgünler v7.9</h2>
     <div style="width:100%; max-width:350px; background:white; padding:25px; border-radius:15px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -138,7 +134,7 @@
         db.collection("products").onSnapshot(snap => { allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderInventory(); });
         db.collection("suppliers").orderBy("name").onSnapshot(snap => { allSuppliers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderSupplierList(); updateSupplierSelects(); });
         db.collection("missing").orderBy("date", "desc").onSnapshot(snap => { allMissing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMissingList(); });
-        db.collection("logs").orderBy("date", "desc").limit(30).onSnapshot(snap => { allLogs = snap.docs.map(doc => doc.data()); renderLogs(); });
+        db.collection("logs").orderBy("date", "desc").limit(50).onSnapshot(snap => { allLogs = snap.docs.map(doc => doc.data()); renderLogs(); });
     }
 
     function renderInventory() {
@@ -157,25 +153,35 @@
         const isAdmin = auth.currentUser?.email === patronEmail;
         let tHtml = "", gHtml = "";
         allMissing.filter(m => m.status === 'bekliyor').forEach(m => {
-            tHtml += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}')">✓</button>` : '<small>Bekliyor</small>'}</td></tr>`;
-            gHtml += `<div class="item-card">
-                <div style="font-size:12px; color:var(--danger); font-weight:bold;">Miktar: ${m.amount}</div>
-                <b>${m.name}</b>
-                <div style="font-size:11px; color:#777;">🚚 ${m.supplier}</div>
-                <div class="card-actions">
-                    ${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}')">GELDİ ✓</button>` : '<button class="btn-small" style="background:#ccc; color:#666;" disabled>BEKLİYOR</button>'}
-                </div>
-            </div>`;
+            tHtml += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}','${m.name}')">✓</button>` : '<small>Bekliyor</small>'}</td></tr>`;
+            gHtml += `<div class="item-card"><div style="font-size:12px; color:var(--danger); font-weight:bold;">Miktar: ${m.amount}</div><b>${m.name}</b><div style="font-size:11px; color:#777;">🚚 ${m.supplier}</div><div class="card-actions">${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}','${m.name}')">GELDİ ✓</button>` : '<button class="btn-small" style="background:#ccc; color:#666;" disabled>BEKLİYOR</button>'}</div></div>`;
         });
         document.getElementById('missingBody').innerHTML = tHtml;
         document.getElementById('missingGridBody').innerHTML = gHtml;
     }
 
-    function toggleView(type) {
-        views[type] = views[type] === 'table' ? 'grid' : 'table';
-        const prefix = type === 'inventory' ? 'inv_' : 'miss_';
-        document.getElementById(prefix + 'tableView').style.display = views[type] === 'table' ? 'block' : 'none';
-        document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none';
+    function markAsMissing(id, n, s) {
+        const m = prompt("Eksik Miktarı Nedir?");
+        if (m) {
+            db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') });
+            addLog("📋 Eksik Listesine Eklendi", `Ürün: ${n}\nToptancı: ${s}\nMiktar: ${m}`);
+        }
+    }
+
+    function markAsSupplied(id, name) {
+        if (confirm("Ürün dükkana geldi mi?")) {
+            db.collection("missing").doc(id).update({ status: 'tamam' });
+            addLog("✅ Eksik Tamamlandı", `Ürün: ${name}\nDurum: Stoklara eklendi / Geldi.`);
+        }
+    }
+
+    function addLog(action, detail) {
+        db.collection("logs").add({
+            user: auth.currentUser.email,
+            action: action,
+            detail: detail,
+            date: new Date().toLocaleString('tr-TR')
+        });
     }
 
     function renderLogs() {
@@ -186,16 +192,15 @@
         document.getElementById('logContent').innerHTML = h;
     }
 
-    // Stabil Temel Fonksiyonlar
-    async function saveProduct() { const id = document.getElementById('p_id').value; const p = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, kdv: document.getElementById('p_kdv').value, info: document.getElementById('p_info').value.trim() }; if(!p.name) return; if(id) await db.collection("products").doc(id).update(p); else await db.collection("products").add(p); db.collection("logs").add({user:auth.currentUser.email, action:id?"✏️ Güncelleme":"✨ Yeni Ürün", detail:p.name + " (" + p.supplier + ")", date:new Date().toLocaleString('tr-TR')}); resetForm(); showPage('inventory'); }
+    // Diğer Temel Fonksiyonlar
+    function toggleView(type) { views[type] = views[type] === 'table' ? 'grid' : 'table'; const prefix = type === 'inventory' ? 'inv_' : 'miss_'; document.getElementById(prefix + 'tableView').style.display = views[type] === 'table' ? 'block' : 'none'; document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none'; }
+    async function saveProduct() { const id = document.getElementById('p_id').value; const p = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, kdv: document.getElementById('p_kdv').value, info: document.getElementById('p_info').value.trim() }; if(!p.name) return; if(id) await db.collection("products").doc(id).update(p); else await db.collection("products").add(p); addLog(id?"✏️ Ürün Güncellendi":"✨ Yeni Ürün Kaydı", `Ürün: ${p.name}\nToptancı: ${p.supplier}`); resetForm(); showPage('inventory'); }
     function renderSupplierList() { const isAdmin = auth.currentUser?.email === patronEmail; let h = ""; allSuppliers.forEach(s => { h += `<tr><td><b>${s.name}</b></td><td>${formatTRY(s.balance)}</td><td><button class="btn-small" style="background:var(--danger)" onclick="updateBalance('${s.id}','${s.name}','borc')">-</button><button class="btn-small" style="background:var(--accent)" onclick="updateBalance('${s.id}','${s.name}','odeme')">+</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="editSupplier('${s.id}','${s.name}')">✏️</button>`:''}</td></tr>`; }); document.getElementById('supBody').innerHTML = h; }
     function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #inventory .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
     function showPage(p) { document.querySelectorAll('.page').forEach(x=>x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
     function resetForm() { document.getElementById('p_id').value=""; document.querySelectorAll('#add-product input').forEach(x=>x.value=""); }
     function updateSupplierSelects() { let o='<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s=>o+=`<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML=o; }
-    function markAsMissing(id,n,s) { const m = prompt("Miktar?"); if(m) db.collection("missing").add({name:n, supplier:s, amount:m, status:'bekliyor', date:new Date().toLocaleString('tr-TR')}); }
-    function markAsSupplied(id) { if(confirm("Geldi mi?")) db.collection("missing").doc(id).update({status:'tamam'}); }
-    function updateBalance(id,n,t) { const v = prompt("Tutar:"); if(v){ const s = allSuppliers.find(x=>x.id===id); const nb = (s.balance||0)+(t==='borc'?parseFloat(v):-parseFloat(v)); db.collection("suppliers").doc(id).update({balance:nb}); } }
+    function updateBalance(id,n,t) { const v = prompt("Tutar:"); if(v){ const s = allSuppliers.find(x=>x.id===id); const nb = (s.balance||0)+(t==='borc'?parseFloat(v):-parseFloat(v)); db.collection("suppliers").doc(id).update({balance:nb}); addLog(`💰 Toptancı ${t==="borc"?"Borç":"Ödeme"}`, `Toptancı: ${n}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`); } }
     function editSupplier(id, old) { const n = prompt("Yeni isim:", old); if(n && n!==old) db.collection("suppliers").doc(id).update({name:n}); }
     function addSupplier() { const n = document.getElementById('sup_name_input').value.trim(); if(n) db.collection("suppliers").add({name:n, balance:0}); }
     function goToEdit(id) { const p = allProducts.find(x=>x.id===id); document.getElementById('p_id').value=id; document.getElementById('p_name').value=p.name; document.getElementById('p_supplier_select').value=p.supplier; document.getElementById('p_buy').value=p.buyPrice; document.getElementById('p_sellW').value=p.sellWholesale; document.getElementById('p_sellR').value=p.sellRetail; document.getElementById('p_info').value=p.info; showPage('add-product'); }
