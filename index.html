@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v7.9 - Eksik Logları Aktif</title>
+    <title>Hoşgünler v8.0 - Eksik Filtreleme</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -25,8 +25,6 @@
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 10px; }
         .item-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .price-buy-card { font-size: 11px; color: var(--danger); font-weight: bold; margin-bottom: 4px; display: none; }
-        .price-retail { font-size: 19px; font-weight: 800; color: var(--accent); }
-        .price-wholesale { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
         .item-card b { font-size: 14px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; margin: 5px 0; }
         .card-actions { display: flex; gap: 4px; margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 8px; }
 
@@ -48,7 +46,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2>Hoşgünler v7.9</h2>
+    <h2>Hoşgünler v8.0</h2>
     <div style="width:100%; max-width:350px; background:white; padding:25px; border-radius:15px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -82,8 +80,10 @@
     </section>
 
     <section id="missing-list" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0;">📋 Eksik Listesi</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
+            <select id="missingFilter" style="margin:0; flex:1;" onchange="renderMissingList()">
+                <option value="">Tüm Toptancılar</option>
+            </select>
             <button onclick="toggleView('missing')" style="background:#fff; border:2px solid var(--primary); width:55px; height:45px; border-radius:10px; font-size:20px;">🖼️</button>
         </div>
         <div id="miss_tableView" class="table-responsive">
@@ -143,7 +143,7 @@
         let tHtml = "", gHtml = "";
         sorted.forEach(p => {
             tHtml += `<tr><td><b>${p.name}</b><br><small>${p.supplier}</small></td><td class="admin-only" style="color:var(--danger)">${formatTRY(p.buyPrice)}</td><td>${formatTRY(p.sellWholesale)}</td><td>${formatTRY(p.sellRetail)}</td><td>${p.info || '-'}</td><td style="text-align:center"><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">✏️</button>`:''}</td></tr>`;
-            gHtml += `<div class="item-card"><div class="price-buy-card">Alış: ${formatTRY(p.buyPrice)}</div><div class="price-retail">${formatTRY(p.sellRetail)}</div><div class="price-wholesale">Toptan: ${formatTRY(p.sellWholesale)}</div><b>${p.name}</b><div style="font-size:11px; color:#777;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div><div class="card-actions"><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">Düz.</button>`:''}</div></div>`;
+            gHtml += `<div class="item-card"><div class="price-buy-card">Alış: ${formatTRY(p.buyPrice)}</div><div style="font-size:19px; font-weight:800; color:var(--accent);">${formatTRY(p.sellRetail)}</div><div style="font-size:13px; font-weight:600; color:#555; margin-bottom:5px;">Toptan: ${formatTRY(p.sellWholesale)}</div><b>${p.name}</b><div style="font-size:11px; color:#777;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div><div class="card-actions"><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">Düz.</button>`:''}</div></div>`;
         });
         document.getElementById('invBody').innerHTML = tHtml;
         document.getElementById('gridBody').innerHTML = gHtml;
@@ -151,8 +151,10 @@
 
     function renderMissingList() {
         const isAdmin = auth.currentUser?.email === patronEmail;
+        const filterVal = document.getElementById('missingFilter').value;
         let tHtml = "", gHtml = "";
-        allMissing.filter(m => m.status === 'bekliyor').forEach(m => {
+        
+        allMissing.filter(m => m.status === 'bekliyor' && (!filterVal || m.supplier === filterVal)).forEach(m => {
             tHtml += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}','${m.name}')">✓</button>` : '<small>Bekliyor</small>'}</td></tr>`;
             gHtml += `<div class="item-card"><div style="font-size:12px; color:var(--danger); font-weight:bold;">Miktar: ${m.amount}</div><b>${m.name}</b><div style="font-size:11px; color:#777;">🚚 ${m.supplier}</div><div class="card-actions">${isAdmin ? `<button class="btn-small" style="background:var(--accent)" onclick="markAsSupplied('${m.id}','${m.name}')">GELDİ ✓</button>` : '<button class="btn-small" style="background:#ccc; color:#666;" disabled>BEKLİYOR</button>'}</div></div>`;
         });
@@ -160,50 +162,28 @@
         document.getElementById('missingGridBody').innerHTML = gHtml;
     }
 
-    function markAsMissing(id, n, s) {
-        const m = prompt("Eksik Miktarı Nedir?");
-        if (m) {
-            db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') });
-            addLog("📋 Eksik Listesine Eklendi", `Ürün: ${n}\nToptancı: ${s}\nMiktar: ${m}`);
-        }
-    }
-
-    function markAsSupplied(id, name) {
-        if (confirm("Ürün dükkana geldi mi?")) {
-            db.collection("missing").doc(id).update({ status: 'tamam' });
-            addLog("✅ Eksik Tamamlandı", `Ürün: ${name}\nDurum: Stoklara eklendi / Geldi.`);
-        }
+    function updateSupplierSelects() {
+        let o='<option value="">Toptancı Seç...</option>';
+        let fO='<option value="">Tüm Toptancılar</option>';
+        allSuppliers.forEach(s => {
+            o += `<option value="${s.name}">${s.name}</option>`;
+            fO += `<option value="${s.name}">${s.name}</option>`;
+        });
+        document.getElementById('p_supplier_select').innerHTML = o;
+        document.getElementById('missingFilter').innerHTML = fO;
     }
 
     function addLog(action, detail) {
-        db.collection("logs").add({
-            user: auth.currentUser.email,
-            action: action,
-            detail: detail,
-            date: new Date().toLocaleString('tr-TR')
-        });
+        db.collection("logs").add({ user: auth.currentUser.email, action: action, detail: detail, date: new Date().toLocaleString('tr-TR') });
     }
 
-    function renderLogs() {
-        let h = "";
-        allLogs.forEach(l => {
-            h += `<div class="log-item"><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;"><b>👤 ${l.user.split('@')[0].toUpperCase()}</b><span style="color:#888">${l.date}</span></div><strong style="color:var(--primary)">${l.action}</strong><div class="log-details">${l.detail}</div></div>`;
-        });
-        document.getElementById('logContent').innerHTML = h;
-    }
-
-    // Diğer Temel Fonksiyonlar
+    function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if (m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addLog("📋 Eksik Yazıldı", `Ürün: ${n}\nToptancı: ${s}\nMiktar: ${m}`); } }
+    function markAsSupplied(id, name) { if (confirm("Geldi mi?")) { db.collection("missing").doc(id).update({ status: 'tamam' }); addLog("✅ Eksik Geldi", `Ürün: ${name}`); } }
     function toggleView(type) { views[type] = views[type] === 'table' ? 'grid' : 'table'; const prefix = type === 'inventory' ? 'inv_' : 'miss_'; document.getElementById(prefix + 'tableView').style.display = views[type] === 'table' ? 'block' : 'none'; document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none'; }
-    async function saveProduct() { const id = document.getElementById('p_id').value; const p = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, kdv: document.getElementById('p_kdv').value, info: document.getElementById('p_info').value.trim() }; if(!p.name) return; if(id) await db.collection("products").doc(id).update(p); else await db.collection("products").add(p); addLog(id?"✏️ Ürün Güncellendi":"✨ Yeni Ürün Kaydı", `Ürün: ${p.name}\nToptancı: ${p.supplier}`); resetForm(); showPage('inventory'); }
-    function renderSupplierList() { const isAdmin = auth.currentUser?.email === patronEmail; let h = ""; allSuppliers.forEach(s => { h += `<tr><td><b>${s.name}</b></td><td>${formatTRY(s.balance)}</td><td><button class="btn-small" style="background:var(--danger)" onclick="updateBalance('${s.id}','${s.name}','borc')">-</button><button class="btn-small" style="background:var(--accent)" onclick="updateBalance('${s.id}','${s.name}','odeme')">+</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="editSupplier('${s.id}','${s.name}')">✏️</button>`:''}</td></tr>`; }); document.getElementById('supBody').innerHTML = h; }
-    function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #inventory .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
     function showPage(p) { document.querySelectorAll('.page').forEach(x=>x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
-    function resetForm() { document.getElementById('p_id').value=""; document.querySelectorAll('#add-product input').forEach(x=>x.value=""); }
-    function updateSupplierSelects() { let o='<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s=>o+=`<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML=o; }
-    function updateBalance(id,n,t) { const v = prompt("Tutar:"); if(v){ const s = allSuppliers.find(x=>x.id===id); const nb = (s.balance||0)+(t==='borc'?parseFloat(v):-parseFloat(v)); db.collection("suppliers").doc(id).update({balance:nb}); addLog(`💰 Toptancı ${t==="borc"?"Borç":"Ödeme"}`, `Toptancı: ${n}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`); } }
-    function editSupplier(id, old) { const n = prompt("Yeni isim:", old); if(n && n!==old) db.collection("suppliers").doc(id).update({name:n}); }
-    function addSupplier() { const n = document.getElementById('sup_name_input').value.trim(); if(n) db.collection("suppliers").add({name:n, balance:0}); }
-    function goToEdit(id) { const p = allProducts.find(x=>x.id===id); document.getElementById('p_id').value=id; document.getElementById('p_name').value=p.name; document.getElementById('p_supplier_select').value=p.supplier; document.getElementById('p_buy').value=p.buyPrice; document.getElementById('p_sellW').value=p.sellWholesale; document.getElementById('p_sellR').value=p.sellRetail; document.getElementById('p_info').value=p.info; showPage('add-product'); }
+    function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #inventory .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
+    function renderLogs() { let h = ""; allLogs.forEach(l => { h += `<div class="log-item"><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;"><b>👤 ${l.user.split('@')[0].toUpperCase()}</b><span style="color:#888">${l.date}</span></div><strong style="color:var(--primary)">${l.action}</strong><div class="log-details">${l.detail}</div></div>`; }); document.getElementById('logContent').innerHTML = h; }
+    function renderSupplierList() { const isAdmin = auth.currentUser?.email === patronEmail; let h = ""; allSuppliers.forEach(s => { h += `<tr><td><b>${s.name}</b></td><td>${formatTRY(s.balance)}</td><td><button class="btn-small" style="background:var(--danger)" onclick="updateBalance('${s.id}','${s.name}','borc')">-</button><button class="btn-small" style="background:var(--accent)" onclick="updateBalance('${s.id}','${s.name}','odeme')">+</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="editSupplier('${s.id}','${s.name}')">✏️</button>`:''}</td></tr>`; }); document.getElementById('supBody').innerHTML = h; }
     function logout() { auth.signOut().then(()=>location.reload()); }
 </script>
 </body>
