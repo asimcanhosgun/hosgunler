@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v8.9.5 - Modern Tasarım</title>
+    <title>Hoşgünler v8.9.6 - Detaylı Log & Modern Tasarım</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -12,75 +12,42 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { 
-            --primary: #1e293b; 
-            --accent: #10b981; 
-            --danger: #ef4444; 
-            --warning: #f59e0b; 
-            --info: #3b82f6; 
-            --bg: #f8fafc; 
-            --text-dark: #0f172a;
-        }
-        
-        * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        :root { --primary: #1e293b; --accent: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6; --bg: #f8fafc; --text-dark: #0f172a; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: var(--bg); margin: 0; color: var(--text-dark); }
         
         nav { background: var(--primary); color: white; padding: 12px 8px; display: flex; gap: 8px; position: sticky; top: 0; z-index: 1000; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        nav button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px 16px; cursor: pointer; border-radius: 10px; font-weight: 600; flex-shrink: 0; transition: 0.2s; }
-        .active-nav { background: var(--accent) !important; border-color: transparent; }
+        nav button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px 16px; cursor: pointer; border-radius: 10px; font-weight: 600; flex-shrink: 0; }
+        .active-nav { background: var(--accent) !important; }
 
         .container { padding: 16px; max-width: 1400px; margin: auto; }
         .page { display: none; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); min-height: 85vh; }
         .active-page { display: block !important; }
 
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 15px; }
-        .item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
-        .item-card:active { transform: scale(0.98); }
+        .item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; }
         
-        /* ÜRÜN İSİMLERİ - MODERN VE BÜYÜK */
-        .card-title { 
-            font-size: 20px; 
-            font-weight: 800; 
-            margin: 6px 0; 
-            min-height: 48px; 
-            line-height: 1.2; 
-            color: var(--text-dark);
-            letter-spacing: -0.5px; /* Daha modern bir duruş için */
-        }
-        
-        .list-product-name { 
-            font-size: 17px; 
-            font-weight: 700; 
-            color: var(--text-dark);
-            letter-spacing: -0.3px;
-        }
+        .card-title { font-size: 20px; font-weight: 800; margin: 6px 0; min-height: 48px; line-height: 1.2; color: var(--text-dark); letter-spacing: -0.5px; }
+        .list-product-name { font-size: 17px; font-weight: 700; color: var(--text-dark); }
 
         .card-actions { display: flex; gap: 6px; margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 12px; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; text-align: left; }
-        th { background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
-
-        .admin-only { display: none !important; } 
-        input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; transition: 0.2s; }
-        input:focus { border-color: var(--info); }
         .btn-save { width: 100%; background: var(--primary); color: white; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; }
-        .btn-small { padding: 8px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; color: white; cursor: pointer; transition: 0.2s; }
-        .btn-small:hover { opacity: 0.9; }
+        .btn-small { padding: 8px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; color: white; cursor: pointer; }
 
-        /* Log ve diğer stiller */
-        .log-entry { border-radius: 12px; margin-bottom: 15px; border-left: 6px solid #ccc; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .log-header { background: #f8fafc; padding: 10px 15px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }
+        .log-entry { border-radius: 12px; margin-bottom: 15px; border-left: 6px solid #64748b; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .log-header { background: #f8fafc; padding: 10px 15px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-bottom: 1px solid #f1f5f9; }
         .log-body { padding: 15px; }
-        .log-detail-box { background: #1e293b; color: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; margin: 0; white-space: pre-wrap; }
+        .log-detail-box { background: #1e293b; color: #f1f5f9; padding: 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; margin: 8px 0 0 0; white-space: pre-wrap; line-height: 1.4; }
+        
+        .admin-only { display: none !important; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800; letter-spacing: -1px;">Hoşgünler v8.9.5</h2>
-    <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <h2 style="font-weight: 800; letter-spacing: -1px;">Hoşgünler v8.9.6</h2>
+    <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
         <button onclick="login()" class="btn-save">GİRİŞ YAP</button>
@@ -99,7 +66,7 @@
 <div class="container">
     <section id="inventory" class="page active-page">
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="mainSearch" style="flex:1; margin-bottom:0;" placeholder="Ürün veya toptancı ara..." onkeyup="searchInventory()">
+            <input type="text" id="mainSearch" style="flex:1; margin-bottom:0;" placeholder="Ürün ara..." onkeyup="searchInventory()">
             <button onclick="toggleView('inventory')" style="background:#fff; border:2px solid var(--primary); width:55px; border-radius:12px; font-size:20px;">🖼️</button>
         </div>
         <div id="inv_tableView" class="table-responsive">
@@ -131,8 +98,8 @@
     </section>
 
     <section id="add-product" class="page">
-        <h2 id="formTitle" style="letter-spacing:-1px;">⚙️ Yeni Ürün Kaydı</h2>
-        <div id="editModeInfo" style="display:none; background:#fef3c7; color:#92400e; padding:12px; border-radius:10px; margin-bottom:15px; border:1px solid #fde68a;">⚠️ Düzenleme modundasınız.</div>
+        <h2 id="formTitle">⚙️ Kayıt / Düzenleme</h2>
+        <div id="editModeInfo" style="display:none; background:#fef3c7; color:#92400e; padding:12px; border-radius:10px; margin-bottom:15px;">⚠️ Düzenleme modundasınız.</div>
         <input type="hidden" id="p_id">
         <input type="text" id="p_name" placeholder="Ürün Adı">
         <select id="p_supplier_select"></select>
@@ -196,24 +163,8 @@
         db.collection("logs").orderBy("date", "desc").limit(100).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderLogs(); });
     }
 
-    function toggleView(type) {
-        views[type] = views[type] === 'table' ? 'grid' : 'table';
-        const prefix = type === 'inventory' ? 'inv_' : 'miss_';
-        document.getElementById(prefix + 'tableView').style.display = views[type] === 'table' ? 'block' : 'none';
-        document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none';
-    }
-
     function addAuditLog(type, action, detail) {
         db.collection("logs").add({ user: auth.currentUser.email, type: type, action: action, detail: detail, date: new Date().toLocaleString('tr-TR') });
-    }
-
-    function resetProductForm() {
-        document.getElementById('p_id').value = "";
-        document.getElementById('formTitle').innerText = "⚙️ Yeni Ürün Kaydı";
-        document.getElementById('editModeInfo').style.display = "none";
-        document.getElementById('resetBtn').style.display = "none";
-        document.querySelectorAll('#add-product input').forEach(i => i.value = "");
-        document.getElementById('p_supplier_select').value = "";
     }
 
     async function saveProduct() {
@@ -226,13 +177,29 @@
             sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, 
             info: document.getElementById('p_info').value.trim() 
         };
+
         if(!newP.name) return;
+
         if(id) {
-            await db.collection("products").doc(id).update(newP);
-            addAuditLog("guncelleme", `✏️ Güncellendi: ${newP.name}`, `Yeni fiyatlar ve bilgiler işlendi.`);
+            // GÜNCELLEME LOG DETAYI
+            const oldP = allProducts.find(x => x.id === id);
+            let changes = [];
+            if(oldP.name !== newP.name) changes.push(`İsim: ${oldP.name} -> ${newP.name}`);
+            if(oldP.supplier !== newP.supplier) changes.push(`Toptancı: ${oldP.supplier} -> ${newP.supplier}`);
+            if(oldP.buyPrice !== newP.buyPrice) changes.push(`Alış: ${formatTRY(oldP.buyPrice)} -> ${formatTRY(newP.buyPrice)}`);
+            if(oldP.sellWholesale !== newP.sellWholesale) changes.push(`Toptan: ${formatTRY(oldP.sellWholesale)} -> ${formatTRY(newP.sellWholesale)}`);
+            if(oldP.sellRetail !== newP.sellRetail) changes.push(`Perakende: ${formatTRY(oldP.sellRetail)} -> ${formatTRY(newP.sellRetail)}`);
+            if((oldP.info||"") !== (newP.info||"")) changes.push(`Bilgi: ${oldP.info||'Boş'} -> ${newP.info||'Boş'}`);
+
+            if(changes.length > 0) {
+                await db.collection("products").doc(id).update(newP);
+                addAuditLog("guncelleme", `✏️ Ürün Güncellendi: ${newP.name}`, changes.join('\n'));
+            }
         } else {
+            // YENİ KAYIT LOG DETAYI
             await db.collection("products").add(newP);
-            addAuditLog("yeni", "✨ Yeni Ürün", `${newP.name} sisteme eklendi.`);
+            const detail = `Toptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nToptan: ${formatTRY(newP.sellWholesale)}\nPerakende: ${formatTRY(newP.sellRetail)}\nBilgi: ${newP.info || 'Yok'}`;
+            addAuditLog("yeni", `✨ Yeni Ürün: ${newP.name}`, detail);
         }
         resetProductForm(); showPage('inventory');
     }
@@ -280,16 +247,19 @@
         document.getElementById('logContent').innerHTML = h;
     }
 
-    // Yardımcı Fonksiyonlar
-    async function updateBalance(id, n, t) { const v = prompt(n + " tutar:"); if(v && !isNaN(v)) { const s = allSuppliers.find(x => x.id === id); const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v)); await db.collection("suppliers").doc(id).update({ balance: nb }); addAuditLog("odeme", "💰 Toptancı İşlemi", `${n}: ${formatTRY(v)} ${t==='borc'?'borç':'ödeme'}`); } }
-    function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if(m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addAuditLog("eksik", "📋 Eksik Yazıldı", `${n}: ${m}`); } }
-    async function markAsSupplied(id, n) { if(confirm("Geldi mi?")) { await db.collection("missing").doc(id).update({ status: 'tamam' }); addAuditLog("eksik", "✅ Eksik Tamamlandı", n); } }
+    // Modal/Prompt functions (Restored)
+    async function updateBalance(id, n, t) { const v = prompt(n + " tutar:"); if(v && !isNaN(v)) { const s = allSuppliers.find(x => x.id === id); const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v)); await db.collection("suppliers").doc(id).update({ balance: nb }); addAuditLog("odeme", "💰 Toptancı İşlemi", `${n}\nİşlem: ${t === 'borc' ? 'Borç' : 'Ödeme'}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`); } }
+    function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if(m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addAuditLog("eksik", "📋 Eksik Yazıldı", `${n}\nMiktar: ${m}\nToptancı: ${s}`); } }
+    async function markAsSupplied(id, n) { if(confirm("Geldi mi?")) { await db.collection("missing").doc(id).update({ status: 'tamam' }); addAuditLog("eksik", "✅ Eksik Tamamlandı", `Ürün: ${n}`); } }
+    
+    function resetProductForm() { document.getElementById('p_id').value = ""; document.getElementById('formTitle').innerText = "⚙️ Yeni Ürün Kaydı"; document.getElementById('editModeInfo').style.display = "none"; document.getElementById('resetBtn').style.display = "none"; document.querySelectorAll('#add-product input').forEach(i => i.value = ""); document.getElementById('p_supplier_select').value = ""; }
     function goToEdit(id) { const p = allProducts.find(x => x.id === id); document.getElementById('p_id').value = id; document.getElementById('p_name').value = p.name; document.getElementById('p_supplier_select').value = p.supplier; document.getElementById('p_buy').value = p.buyPrice; document.getElementById('p_sellW').value = p.sellWholesale; document.getElementById('p_sellR').value = p.sellRetail; document.getElementById('p_info').value = p.info || ""; document.getElementById('formTitle').innerText = "✏️ Düzenle: " + p.name; document.getElementById('editModeInfo').style.display = "block"; document.getElementById('resetBtn').style.display = "block"; showPage('add-product'); }
     function showPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
+    function toggleView(type) { views[type] = views[type] === 'table' ? 'grid' : 'table'; document.getElementById(type === 'inventory' ? 'inv_tableView' : 'miss_tableView').style.display = views[type] === 'table' ? 'block' : 'none'; document.getElementById(type === 'inventory' ? 'inv_gridView' : 'miss_gridView').style.display = views[type] === 'grid' ? 'block' : 'none'; }
     function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #gridBody .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
     function updateSupplierSelects() { let h = '<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s => h += `<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML = h; document.getElementById('missingFilter').innerHTML = '<option value="">Tüm Toptancılar</option>' + h; }
     function addSupplierPrompt() { const n = prompt("Toptancı Adı:"); if(n) { db.collection("suppliers").add({name:n, balance:0}); addAuditLog("yeni", "🚚 Yeni Toptancı", n); } }
-    function deleteSupplier(id, n, b) { if(confirm(n + " silinsin mi?")) { db.collection("suppliers").doc(id).delete(); addAuditLog("eksik", "🗑️ Toptancı Silindi", n); } }
+    function deleteSupplier(id, n, b) { if(confirm(n + " silinsin mi?")) { db.collection("suppliers").doc(id).delete(); addAuditLog("eksik", "🗑️ Toptancı Silindi", `${n} (Bakiye: ${formatTRY(b)})`); } }
     function logout() { auth.signOut().then(() => location.reload()); }
 </script>
 </body>
