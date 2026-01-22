@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v8.8 - Tam Detaylı Denetim</title>
+    <title>Hoşgünler v8.9 - Toptancı Yönetimi</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -22,18 +22,16 @@
         .page { display: none; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 85vh; }
         .active-page { display: block !important; }
 
-        /* GÖRÜNÜM MODLARI */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
         .item-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-title { font-size: 14px; font-weight: bold; margin: 5px 0; min-height: 34px; line-height: 1.2; overflow: hidden; }
-        .card-actions { display: flex; gap: 4px; margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 8px; }
+        .card-actions { display: flex; gap: 4px; margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 8px; flex-wrap: wrap; }
         
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; table-layout: fixed; }
         th, td { padding: 12px 10px; border-bottom: 1px solid #f1f1f1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         th { background: #f8f9fa; font-size: 11px; text-transform: uppercase; color: #666; font-weight: bold; }
 
-        /* LOG SİSTEMİ */
         .log-entry { border-radius: 10px; margin-bottom: 15px; border-left: 6px solid #ccc; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .log-type-yeni { border-left-color: var(--info); }
         .log-type-guncelleme { border-left-color: var(--warning); }
@@ -52,7 +50,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2>Hoşgünler v8.8</h2>
+    <h2>Hoşgünler v8.9</h2>
     <div style="width:100%; max-width:350px; background:white; padding:25px; border-radius:15px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -102,7 +100,7 @@
             <button onclick="addSupplierPrompt()" class="btn-small admin-only" style="background:var(--primary); font-size:18px; width:55px;">+</button>
         </div>
         <div id="sup_tableView" class="table-responsive" style="display:none;">
-            <table><thead><tr><th>Toptancı</th><th>Bakiye</th><th>İşlem</th></tr></thead><tbody id="supTableBody"></tbody></table>
+            <table><thead><tr><th>Toptancı</th><th>Bakiye</th><th style="text-align:center">İşlem</th></tr></thead><tbody id="supTableBody"></tbody></table>
         </div>
         <div id="sup_gridView"><div id="supGridBody" class="grid-container"></div></div>
     </section>
@@ -119,7 +117,7 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <input type="number" id="p_sellR" placeholder="Perakende Satış">
-            <input type="text" id="p_info" placeholder="Raf / Bilgi (Örn: A-12)">
+            <input type="text" id="p_info" placeholder="Raf / Bilgi">
         </div>
         <button onclick="saveProduct()" class="btn-save">💾 KAYDET</button>
         <button id="resetBtn" onclick="resetProductForm()" style="width:100%; background:#6c757d; color:white; padding:12px; border:none; border-radius:8px; margin-top:10px; display:none;">❌ VAZGEÇ</button>
@@ -183,67 +181,94 @@
         document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none';
     }
 
-    // --- LOG KAYDETME (TAM DETAYLI) ---
     function addAuditLog(type, action, detail) {
-        db.collection("logs").add({ 
-            user: auth.currentUser.email, 
-            type: type, 
-            action: action, 
-            detail: detail, 
-            date: new Date().toLocaleString('tr-TR') 
-        });
+        db.collection("logs").add({ user: auth.currentUser.email, type: type, action: action, detail: detail, date: new Date().toLocaleString('tr-TR') });
     }
 
+    // --- TOPTANCI YÖNETİMİ (YENİ) ---
+    function editSupplier(id, oldName) {
+        const newName = prompt("Toptancı adını güncelle:", oldName);
+        if(newName && newName !== oldName) {
+            db.collection("suppliers").doc(id).update({ name: newName });
+            addAuditLog("guncelleme", "🚚 Toptancı Adı Değişti", `Eski: ${oldName}\nYeni: ${newName}`);
+        }
+    }
+
+    function deleteSupplier(id, name, balance) {
+        if(confirm(`${name} toptancısını silmek istediğinize emin misiniz?`)) {
+            db.collection("suppliers").doc(id).delete();
+            addAuditLog("eksik", "🗑️ Toptancı Silindi", `İsim: ${name}\nSon Bakiye: ${formatTRY(balance)}`);
+        }
+    }
+
+    function renderSuppliers() {
+        const isAdmin = auth.currentUser?.email === patronEmail;
+        const f = document.getElementById('supSearch').value.toLowerCase();
+        let tHtml = "", gHtml = "";
+        allSuppliers.filter(s => s.name.toLowerCase().includes(f)).forEach(s => {
+            const bal = formatTRY(s.balance);
+            const statusColor = s.balance > 0 ? 'var(--danger)' : 'var(--accent)';
+            
+            // Tablo Görünümü
+            tHtml += `<tr>
+                <td><b>${s.name}</b></td>
+                <td style="color:${statusColor}">${bal}</td>
+                <td style="text-align:center">
+                    <button class="btn-small" style="background:var(--danger)" onclick="updateBalance('${s.id}','${s.name}','borc')">Borç</button>
+                    <button class="btn-small" style="background:var(--accent)" onclick="updateBalance('${s.id}','${s.name}','odeme')">Ödeme</button>
+                    ${isAdmin ? `<button class="btn-small" style="background:var(--warning)" onclick="editSupplier('${s.id}','${s.name}')">✏️</button>` : ''}
+                    ${isAdmin ? `<button class="btn-small" style="background:var(--primary)" onclick="deleteSupplier('${s.id}','${s.name}',${s.balance})">🗑️</button>` : ''}
+                </td>
+            </tr>`;
+            
+            // Kart Görünümü
+            gHtml += `<div class="item-card">
+                <div class="card-title">${s.name}</div>
+                <div style="font-size:18px; font-weight:bold; color:${statusColor}">${bal}</div>
+                <div class="card-actions">
+                    <button class="btn-small" style="background:var(--danger); flex:1;" onclick="updateBalance('${s.id}','${s.name}','borc')">BORÇ</button>
+                    <button class="btn-small" style="background:var(--accent); flex:1;" onclick="updateBalance('${s.id}','${s.name}','odeme')">ÖDEME</button>
+                    ${isAdmin ? `<button class="btn-small" style="background:var(--warning); width:35px;" onclick="editSupplier('${s.id}','${s.name}')">✏️</button>` : ''}
+                    ${isAdmin ? `<button class="btn-small" style="background:var(--primary); width:35px;" onclick="deleteSupplier('${s.id}','${s.name}',${s.balance})">🗑️</button>` : ''}
+                </div>
+            </div>`;
+        });
+        document.getElementById('supTableBody').innerHTML = tHtml;
+        document.getElementById('supGridBody').innerHTML = gHtml;
+    }
+
+    // --- MEVCUT DİĞER FONKSİYONLAR ---
     async function saveProduct() {
         const id = document.getElementById('p_id').value;
-        const newP = { 
-            name: document.getElementById('p_name').value.trim(), 
-            supplier: document.getElementById('p_supplier_select').value, 
-            buyPrice: parseFloat(document.getElementById('p_buy').value)||0, 
-            sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, 
-            sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, 
-            info: document.getElementById('p_info').value.trim() 
-        };
-        
+        const newP = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, info: document.getElementById('p_info').value.trim() };
         if(!newP.name) return;
-
         if(id) {
-            // GÜNCELLEME KARŞILAŞTIRMA (BİLGİ VE TOPTANCI DAHİL)
             const oldP = allProducts.find(x => x.id === id);
             let d = [];
             if(oldP.name !== newP.name) d.push(`İsim: ${oldP.name} -> ${newP.name}`);
-            if(oldP.supplier !== newP.supplier) d.push(`Toptancı: ${oldP.supplier || 'Belirsiz'} -> ${newP.supplier}`);
+            if(oldP.supplier !== newP.supplier) d.push(`Toptancı: ${oldP.supplier || 'Yok'} -> ${newP.supplier}`);
             if(oldP.buyPrice !== newP.buyPrice) d.push(`Alış: ${formatTRY(oldP.buyPrice)} -> ${formatTRY(newP.buyPrice)}`);
             if(oldP.sellWholesale !== newP.sellWholesale) d.push(`Toptan: ${formatTRY(oldP.sellWholesale)} -> ${formatTRY(newP.sellWholesale)}`);
             if(oldP.sellRetail !== newP.sellRetail) d.push(`Perakende: ${formatTRY(oldP.sellRetail)} -> ${formatTRY(newP.sellRetail)}`);
-            if((oldP.info || "") !== (newP.info || "")) d.push(`Bilgi: ${oldP.info || 'Yok'} -> ${newP.info || 'Yok'}`);
-
-            if(d.length > 0) { 
-                await db.collection("products").doc(id).update(newP); 
-                addAuditLog("guncelleme", `✏️ Ürün Güncellendi: ${newP.name}`, d.join('\n')); 
-            }
+            if((oldP.info||"") !== (newP.info||"")) d.push(`Bilgi: ${oldP.info||'Yok'} -> ${newP.info||'Yok'}`);
+            if(d.length > 0) { await db.collection("products").doc(id).update(newP); addAuditLog("guncelleme", `✏️ Ürün Güncellendi: ${newP.name}`, d.join('\n')); }
         } else {
-            // SIFIRDAN YENİ KAYIT (TÜM DETAYLAR)
             await db.collection("products").add(newP);
-            const fullDetail = `Ürün: ${newP.name}\nToptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nToptan: ${formatTRY(newP.sellWholesale)}\nPerakende: ${formatTRY(newP.sellRetail)}\nBilgi: ${newP.info || 'Yok'}`;
-            addAuditLog("yeni", "✨ Yeni Ürün Eklendi", fullDetail);
+            addAuditLog("yeni", "✨ Yeni Ürün Eklendi", `Ürün: ${newP.name}\nToptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nToptan: ${formatTRY(newP.sellWholesale)}\nPerakende: ${formatTRY(newP.sellRetail)}\nBilgi: ${newP.info||'Yok'}`);
         }
-        resetProductForm(); 
-        showPage('inventory');
+        resetProductForm(); showPage('inventory');
     }
 
-    // --- RENDER FONKSİYONLARI ---
     function renderLogs() {
         const s = document.getElementById('logSearch').value.toLowerCase();
         const f = document.getElementById('logTypeFilter').value;
         let h = "";
         allLogs.filter(l => {
-            const matchSearch = (l.detail || "").toLowerCase().includes(s) || (l.action || "").toLowerCase().includes(s);
-            const matchType = f ? l.type === f : true;
-            return matchSearch && matchType;
+            const mS = (l.detail||"").toLowerCase().includes(s) || (l.action||"").toLowerCase().includes(s);
+            const mT = f ? l.type === f : true;
+            return mS && mT;
         }).forEach(l => {
-            const typeClass = l.type ? `log-type-${l.type}` : "";
-            h += `<div class="log-entry ${typeClass}"><div class="log-header"><span>👤 ${l.user.split('@')[0]}</span><span>${l.date}</span></div><div class="log-body"><b>${l.action}</b><pre class="log-detail-box">${l.detail}</pre></div></div>`;
+            h += `<div class="log-entry log-type-${l.type||'yeni'}"><div class="log-header"><span>👤 ${l.user.split('@')[0]}</span><span>${l.date}</span></div><div class="log-body"><b>${l.action}</b><pre class="log-detail-box">${l.detail}</pre></div></div>`;
         });
         document.getElementById('logContent').innerHTML = h;
     }
@@ -259,16 +284,14 @@
         document.getElementById('gridBody').innerHTML = gHtml;
     }
 
-    function renderSuppliers() {
-        const f = document.getElementById('supSearch').value.toLowerCase();
-        let tHtml = "", gHtml = "";
-        allSuppliers.filter(s => s.name.toLowerCase().includes(f)).forEach(s => {
-            const bal = formatTRY(s.balance);
-            tHtml += `<tr><td><b>${s.name}</b></td><td style="color:${s.balance>0?'var(--danger)':'var(--accent)'}">${bal}</td><td><button class="btn-small" style="background:var(--danger); margin-right:5px;" onclick="updateBalance('${s.id}','${s.name}','borc')">Borç</button><button class="btn-small" style="background:var(--accent)" onclick="updateBalance('${s.id}','${s.name}','odeme')">Ödeme</button></td></tr>`;
-            gHtml += `<div class="item-card"><div class="card-title">${s.name}</div><div style="font-size:18px; font-weight:bold; color:${s.balance>0?'var(--danger)':'var(--primary)'}">${bal}</div><div class="card-actions"><button class="btn-small" style="background:var(--danger); flex:1;" onclick="updateBalance('${s.id}','${s.name}','borc')">BORÇ</button><button class="btn-small" style="background:var(--accent); flex:1;" onclick="updateBalance('${s.id}','${s.name}','odeme')">ÖDEME</button></div></div>`;
-        });
-        document.getElementById('supTableBody').innerHTML = tHtml;
-        document.getElementById('supGridBody').innerHTML = gHtml;
+    async function updateBalance(id, n, t) {
+        const v = prompt(n + " tutar:");
+        if(v && !isNaN(v)) {
+            const s = allSuppliers.find(x => x.id === id);
+            const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v));
+            await db.collection("suppliers").doc(id).update({ balance: nb });
+            addAuditLog("odeme", "💰 Toptancı İşlemi", `${n}\nİşlem: ${t === 'borc' ? 'Borç' : 'Ödeme'}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`);
+        }
     }
 
     function renderMissingList() {
@@ -283,16 +306,6 @@
         document.getElementById('missingGridBody').innerHTML = gHtml;
     }
 
-    // --- YARDIMCI FONKSİYONLAR ---
-    async function updateBalance(id, n, t) {
-        const v = prompt(n + " tutar:");
-        if(v && !isNaN(v)) {
-            const s = allSuppliers.find(x => x.id === id);
-            const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v));
-            await db.collection("suppliers").doc(id).update({ balance: nb });
-            addAuditLog("odeme", "💰 Toptancı İşlemi", `${n}\nİşlem: ${t === 'borc' ? 'Borç Yazıldı' : 'Ödeme Yapıldı'}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`);
-        }
-    }
     function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if(m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addAuditLog("eksik", "📋 Eksik Yazıldı", `${n}\nMiktar: ${m}\nToptancı: ${s}`); } }
     async function markAsSupplied(id, n) { if(confirm("Geldi mi?")) { await db.collection("missing").doc(id).update({ status: 'tamam' }); addAuditLog("eksik", "✅ Eksik Tamamlandı", `Ürün: ${n}`); } }
     function goToEdit(id) { const p = allProducts.find(x => x.id === id); document.getElementById('p_id').value = id; document.getElementById('p_name').value = p.name; document.getElementById('p_supplier_select').value = p.supplier; document.getElementById('p_buy').value = p.buyPrice; document.getElementById('p_sellW').value = p.sellWholesale; document.getElementById('p_sellR').value = p.sellRetail; document.getElementById('p_info').value = p.info || ""; document.getElementById('formTitle').innerText = "✏️ Düzenle: " + p.name; document.getElementById('editModeInfo').style.display = "block"; document.getElementById('resetBtn').style.display = "block"; showPage('add-product'); }
@@ -300,7 +313,7 @@
     function showPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
     function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #gridBody .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
     function updateSupplierSelects() { let h = '<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s => h += `<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML = h; document.getElementById('missingFilter').innerHTML = '<option value="">Tüm Toptancılar</option>' + h; }
-    function addSupplierPrompt() { const n = prompt("Toptancı Adı:"); if(n) db.collection("suppliers").add({name:n, balance:0}); }
+    function addSupplierPrompt() { const n = prompt("Toptancı Adı:"); if(n) { db.collection("suppliers").add({name:n, balance:0}); addAuditLog("yeni", "🚚 Yeni Toptancı Eklendi", n); } }
     function logout() { auth.signOut().then(() => location.reload()); }
 </script>
 </body>
