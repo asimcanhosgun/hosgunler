@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v8.3 - Full Paket</title>
+    <title>Hoşgünler v8.4 - Tam Detaylı Loglar</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -34,15 +34,16 @@
         th, td { padding: 12px 10px; border-bottom: 1px solid #f1f1f1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         th { background: #f8f9fa; font-size: 11px; text-transform: uppercase; color: #666; font-weight: bold; }
 
-        /* Log Tasarımı */
-        .log-timeline { border-left: 2px solid #e9ecef; margin-left: 10px; padding-left: 20px; }
-        .log-entry { position: relative; margin-bottom: 20px; background: white; border: 1px solid #f0f0f0; padding: 12px; border-radius: 10px; }
-        .log-entry::before { content: ''; position: absolute; left: -27px; top: 15px; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; border: 3px solid white; }
-        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .log-user { font-weight: bold; color: var(--primary); font-size: 13px; }
+        /* YENİLENMİŞ LOG TASARIMI */
+        .log-timeline { border-left: 3px solid #dee2e6; margin-left: 10px; padding-left: 20px; margin-top: 20px; }
+        .log-entry { position: relative; margin-bottom: 25px; background: #fff; border: 1px solid #eaedf0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .log-entry::before { content: ''; position: absolute; left: -28.5px; top: 18px; width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 3px solid white; }
+        .log-header { background: #f8f9fa; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+        .log-user { font-weight: 700; color: var(--primary); font-size: 12px; letter-spacing: 0.5px; }
         .log-date { color: #888; font-size: 11px; }
-        .log-action { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; background: #eef2f7; color: #444; margin-bottom: 5px; }
-        .log-body { font-size: 13px; color: #555; line-height: 1.4; border-top: 1px solid #f8f9fa; padding-top: 5px; }
+        .log-content-area { padding: 12px 15px; }
+        .log-action { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #eef2f7; color: var(--primary); margin-bottom: 8px; border: 1px solid #d1d9e4; }
+        .log-body { font-size: 13.5px; color: #444; line-height: 1.6; white-space: pre-wrap; word-break: break-word; background: #fcfcfc; padding: 10px; border-radius: 8px; border: 1px dashed #eee; }
 
         .admin-only { display: none !important; } 
         input, select { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; }
@@ -53,7 +54,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2>Hoşgünler v8.3</h2>
+    <h2>Hoşgünler v8.4</h2>
     <div style="width:100%; max-width:350px; background:white; padding:25px; border-radius:15px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -176,6 +177,26 @@
         db.collection("logs").orderBy("date", "desc").limit(50).onSnapshot(snap => { allLogs = snap.docs.map(doc => doc.data()); renderLogs(); });
     }
 
+    // --- LOGLAR (YENİLENMİŞ GÖRÜNÜM) ---
+    function renderLogs() {
+        let h = "";
+        allLogs.forEach(l => {
+            const userShort = l.user.split('@')[0].toUpperCase();
+            h += `
+            <div class="log-entry">
+                <div class="log-header">
+                    <span class="log-user">👤 ${userShort}</span>
+                    <span class="log-date">${l.date}</span>
+                </div>
+                <div class="log-content-area">
+                    <div class="log-action">${l.action}</div>
+                    <div class="log-body">${l.detail}</div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('logContent').innerHTML = h;
+    }
+
     // --- ÜRÜN İŞLEMLERİ ---
     function renderInventory() {
         const isAdmin = auth.currentUser?.email === patronEmail;
@@ -221,7 +242,7 @@
         const p = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, kdv: document.getElementById('p_kdv').value, info: document.getElementById('p_info').value.trim() };
         if(!p.name) return;
         if(id) await db.collection("products").doc(id).update(p); else await db.collection("products").add(p);
-        addLog(id?"✏️ Güncelleme":"✨ Yeni Kayıt", p.name);
+        addLog(id?"✏️ Güncelleme":"✨ Yeni Kayıt", `${p.name} ürünü ${id?'güncellendi':'eklendi'}.`);
         resetProductForm();
         showPage('inventory');
     }
@@ -241,7 +262,6 @@
         document.getElementById('supGridBody').innerHTML = gHtml;
     }
 
-    // --- EKSİK LİSTESİ ---
     function renderMissingList() {
         const isAdmin = auth.currentUser?.email === patronEmail;
         const filterVal = document.getElementById('missingFilter').value;
@@ -254,22 +274,12 @@
         document.getElementById('missingGridBody').innerHTML = gHtml;
     }
 
-    // --- LOGLAR ---
-    function renderLogs() {
-        let h = "";
-        allLogs.forEach(l => {
-            const userShort = l.user.split('@')[0].toUpperCase();
-            h += `<div class="log-entry"><div class="log-header"><span class="log-user">👤 ${userShort}</span><span class="log-date">${l.date}</span></div><div class="log-action">${l.action}</div><div class="log-body">${l.detail.replace(/\n/g, '<br>')}</div></div>`;
-        });
-        document.getElementById('logContent').innerHTML = h;
-    }
-
     // --- YARDIMCI FONKSİYONLAR ---
     function addLog(action, detail) { db.collection("logs").add({ user: auth.currentUser.email, action: action, detail: detail, date: new Date().toLocaleString('tr-TR') }); }
     function toggleView(type) { views[type] = views[type] === 'table' ? 'grid' : 'table'; const prefix = type === 'inventory' ? 'inv_' : (type === 'missing' ? 'miss_' : 'sup_'); document.getElementById(prefix + 'tableView').style.display = views[type] === 'table' ? 'block' : 'none'; document.getElementById(prefix + 'gridView').style.display = views[type] === 'grid' ? 'block' : 'none'; }
-    function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if (m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addLog("📋 Eksik Yazıldı", `${n} - ${m} adet`); } }
-    function markAsSupplied(id, name) { if (confirm("Geldi mi?")) { db.collection("missing").doc(id).update({ status: 'tamam' }); addLog("✅ Eksik Geldi", name); } }
-    function updateBalance(id, n, t) { const v = prompt(n + " işlem tutarı:"); if (v && !isNaN(v)) { const s = allSuppliers.find(x => x.id === id); const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v)); db.collection("suppliers").doc(id).update({ balance: nb }); addLog(`💰 ${t === "borc" ? "Borç" : "Ödeme"}`, `${n}: ${formatTRY(v)}`); } }
+    function markAsMissing(id, n, s) { const m = prompt("Miktar?"); if (m) { db.collection("missing").add({ name: n, supplier: s, amount: m, status: 'bekliyor', date: new Date().toLocaleString('tr-TR') }); addLog("📋 Eksik Yazıldı", `Ürün: ${n}\nMiktar: ${m}\nToptancı: ${s}`); } }
+    function markAsSupplied(id, name) { if (confirm("Geldi mi?")) { db.collection("missing").doc(id).update({ status: 'tamam' }); addLog("✅ Eksik Geldi", `Ürün: ${name}\nDurum: Tamamlandı`); } }
+    function updateBalance(id, n, t) { const v = prompt(n + " işlem tutarı:"); if (v && !isNaN(v)) { const s = allSuppliers.find(x => x.id === id); const nb = (s.balance || 0) + (t === 'borc' ? parseFloat(v) : -parseFloat(v)); db.collection("suppliers").doc(id).update({ balance: nb }); addLog(`💰 ${t === "borc" ? "Borç" : "Ödeme"}`, `Toptancı: ${n}\nTutar: ${formatTRY(v)}\nYeni Bakiye: ${formatTRY(nb)}`); } }
     function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #inv_gridView .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
     function updateSupplierSelects() { let o='<option value="">Toptancı Seç...</option>', fO='<option value="">Tüm Toptancılar (Filtrele)</option>'; allSuppliers.forEach(s => { o += `<option value="${s.name}">${s.name}</option>`; fO += `<option value="${s.name}">${s.name}</option>`; }); document.getElementById('p_supplier_select').innerHTML = o; document.getElementById('missingFilter').innerHTML = fO; }
     function showPage(p) { document.querySelectorAll('.page').forEach(x=>x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
