@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v9.0.4 - Ürün Silme</title>
+    <title>Hoşgünler v9.0.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800;">Hoşgünler v9.0.4</h2>
+    <h2 style="font-weight: 800;">Hoşgünler v9.0.5</h2>
     <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -97,9 +97,7 @@
         <input type="hidden" id="p_id"><input type="text" id="p_name" placeholder="Ürün Adı"><select id="p_supplier_select"></select>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_buy" placeholder="Alış"><input type="number" id="p_sellW" placeholder="Toptan"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_sellR" placeholder="Perakende"><input type="text" id="p_info" placeholder="Bilgi / Raf"></div>
-        
         <button onclick="saveProduct()" class="btn-save">💾 KAYDET</button>
-        
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
             <button id="deleteBtn" onclick="deleteProduct()" style="background:var(--danger); color:white; padding:14px; border:none; border-radius:12px; font-weight:700; display:none;">🗑️ ÜRÜNÜ SİL</button>
             <button id="resetBtn" onclick="resetProductForm()" style="background:#94a3b8; color:white; padding:14px; border:none; border-radius:12px; font-weight:700; display:none;">❌ VAZGEÇ</button>
@@ -147,11 +145,23 @@
         db.collection("products").onSnapshot(snap => { allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderInventory(); });
         db.collection("suppliers").orderBy("name").onSnapshot(snap => { allSuppliers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderSuppliers(); updateSupplierSelects(); });
         db.collection("missing").orderBy("date", "desc").onSnapshot(snap => { allMissing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMissingList(); });
-        db.collection("logs").orderBy("date", "desc").limit(200).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderLogs(); });
+        // Log sıralaması serverTimestamp'e çekildi
+        db.collection("logs").orderBy("serverTimestamp", "desc").limit(400).onSnapshot(snap => { 
+            allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+            renderLogs(); 
+        });
     }
 
     function addAuditLog(type, action, detail, prodName = "") {
-        db.collection("logs").add({ user: auth.currentUser.email, type: type, action: action, detail: detail, prodName: prodName, date: new Date().toLocaleString('tr-TR') });
+        db.collection("logs").add({ 
+            user: auth.currentUser.email, 
+            type: type, 
+            action: action, 
+            detail: detail, 
+            prodName: prodName, 
+            date: new Date().toLocaleString('tr-TR'),
+            serverTimestamp: firebase.firestore.FieldValue.serverTimestamp() 
+        });
     }
 
     async function saveProduct() {
@@ -182,9 +192,9 @@
         const id = document.getElementById('p_id').value;
         const p = allProducts.find(x => x.id === id);
         if(!id || !p) return;
-        if(confirm(`"${p.name}" ürününü tamamen silmek istediğine emin misin?`)) {
+        if(confirm(`"${p.name}" silinsin mi?`)) {
             await db.collection("products").doc(id).delete();
-            addAuditLog('silme', `🗑️ Ürün Silindi: ${p.name}`, `Toptancı: ${p.supplier}\nSon Alış: ${formatTRY(p.buyPrice)}`, p.name);
+            addAuditLog('silme', `🗑️ Ürün Silindi: ${p.name}`, `Toptancı: ${p.supplier}`, p.name);
             resetProductForm(); showPage('inventory');
         }
     }
