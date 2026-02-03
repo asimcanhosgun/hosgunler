@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v9.0.5</title>
+    <title>Hoşgünler v9.0.6 - Kesin Çözüm</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800;">Hoşgünler v9.0.5</h2>
+    <h2 style="font-weight: 800;">Hoşgünler v9.0.6</h2>
     <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -145,9 +145,14 @@
         db.collection("products").onSnapshot(snap => { allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderInventory(); });
         db.collection("suppliers").orderBy("name").onSnapshot(snap => { allSuppliers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderSuppliers(); updateSupplierSelects(); });
         db.collection("missing").orderBy("date", "desc").onSnapshot(snap => { allMissing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMissingList(); });
-        // Log sıralaması serverTimestamp'e çekildi
-        db.collection("logs").orderBy("serverTimestamp", "desc").limit(400).onSnapshot(snap => { 
-            allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+        
+        // Hibrit Sıralama: serverTimestamp yoksa normal date'e göre sıralar
+        db.collection("logs").limit(500).onSnapshot(snap => { 
+            allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => {
+                const timeA = a.serverTimestamp ? a.serverTimestamp.toMillis() : 0;
+                const timeB = b.serverTimestamp ? b.serverTimestamp.toMillis() : 0;
+                return timeB - timeA;
+            });
             renderLogs(); 
         });
     }
@@ -183,7 +188,8 @@
             }
         } else {
             await db.collection("products").add(newP);
-            addAuditLog('yeni', `✨ Yeni Ürün: ${newP.name}`, `Toptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nPerakende: ${formatTRY(newP.sellRetail)}`, newP.name);
+            let detail = `Toptancı: ${newP.supplier}\nAlış: ${formatTRY(newP.buyPrice)}\nToptan: ${formatTRY(newP.sellWholesale)}\nPerakende: ${formatTRY(newP.sellRetail)}\nBilgi: ${newP.info || '-'}`;
+            addAuditLog('yeni', `✨ Yeni Ürün: ${newP.name}`, detail, newP.name);
         }
         resetProductForm(); showPage('inventory');
     }
@@ -193,8 +199,9 @@
         const p = allProducts.find(x => x.id === id);
         if(!id || !p) return;
         if(confirm(`"${p.name}" silinsin mi?`)) {
+            let detail = `Toptancı: ${p.supplier}\nAlış: ${formatTRY(p.buyPrice)}\nToptan: ${formatTRY(p.sellWholesale)}\nPerakende: ${formatTRY(p.sellRetail)}\nBilgi: ${p.info || '-'}`;
             await db.collection("products").doc(id).delete();
-            addAuditLog('silme', `🗑️ Ürün Silindi: ${p.name}`, `Toptancı: ${p.supplier}`, p.name);
+            addAuditLog('silme', `🗑️ Ürün Silindi: ${p.name}`, detail, p.name);
             resetProductForm(); showPage('inventory');
         }
     }
@@ -208,6 +215,7 @@
             g += `<div class="item-card"><div class="card-title">${p.name}</div><div style="font-size:12px; color:#64748b;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div>${isAdmin ? `<div class="card-price-row" style="color:var(--danger); font-weight:700;"><span>Alış:</span> <span>${formatTRY(p.buyPrice)}</span></div>` : ''}<div class="card-price-row"><span>Toptan:</span> <span>${formatTRY(p.sellWholesale)}</span></div><div class="card-price-row" style="font-size:18px; font-weight:800; color:var(--accent); border:none;"><span>Perakende:</span> <span>${formatTRY(p.sellRetail)}</span></div><div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-small" style="background:var(--primary); flex:1;" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">✏️</button>${histBtn}` : ''}</div></div>`;
         });
         document.getElementById('invBody').innerHTML = t; document.getElementById('gridBody').innerHTML = g;
+        searchInventory(); // Mevcut filtre varsa uygula
     }
 
     function renderMissingList() {
@@ -259,9 +267,28 @@
     async function markSupplied(id, n) { if(confirm("Geldi mi?")) { await db.collection("missing").doc(id).update({status:'tamam'}); addAuditLog('eksik', `✅ Geldi / Temin Edildi`, "Ürün rafa eklendi.", n); } }
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
     function resetProductForm() { document.getElementById('p_id').value = ""; document.getElementById('resetBtn').style.display = "none"; document.getElementById('deleteBtn').style.display = "none"; document.querySelectorAll('#add-product input').forEach(i => i.value = ""); document.getElementById('p_supplier_select').value = ""; document.getElementById('formTitle').innerText = "⚙️ Kayıt / Düzenleme"; }
-    function showPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
+    
+    // Arama Temizleme Özelliği Eklenen Sayfa Geçişi
+    function showPage(p) { 
+        document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); 
+        document.getElementById(p).classList.add('active-page'); 
+        document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); 
+        document.getElementById('btn-'+p)?.classList.add('active-nav');
+        
+        // Diğer sayfalara geçerken aramayı temizle
+        if(p !== 'inventory') {
+            document.getElementById('mainSearch').value = "";
+            searchInventory();
+        }
+    }
+
     function toggleView(t) { views[t] = views[t] === 'table' ? 'grid' : 'table'; document.getElementById((t==='inventory'?'inv_':'miss_')+'tableView').style.display = views[t] === 'table' ? 'block' : 'none'; document.getElementById((t==='inventory'?'inv_':'miss_')+'gridView').style.display = views[t] === 'grid' ? 'block' : 'none'; }
-    function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #gridBody .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
+    
+    function searchInventory() { 
+        const f = document.getElementById('mainSearch').value.toLowerCase(); 
+        document.querySelectorAll('#invBody tr, #gridBody .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); 
+    }
+
     function updateSupplierSelects() { let h = '<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s => h += `<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML = h; document.getElementById('missingFilter').innerHTML = '<option value="">Tüm Toptancılar</option>' + h; }
     async function upBal(id, n, t) { const v = prompt(n + " tutar:"); if(v && !isNaN(v)) { const s = allSuppliers.find(x => x.id === id); const oldB = s.balance||0; const change = parseFloat(v); const nb = (t==='borc'?oldB+change:oldB-change); await db.collection("suppliers").doc(id).update({balance:nb}); addAuditLog('odeme', `💰 Toptancı İşlemi`, `Toptancı: ${n}\nEski: ${formatTRY(oldB)}\nTutar: ${formatTRY(change)}\nYeni: ${formatTRY(nb)}`); } }
     function addSupplierPrompt() { const n = prompt("Toptancı Adı:"); if(n) db.collection("suppliers").add({name:n, balance:0}); }
