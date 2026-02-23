@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v9.1.1</title>
+    <title>Hoşgünler v9.1.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -39,16 +39,13 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800;">Hoşgünler v9.1.1</h2>
+    <h2 style="font-weight: 800;">Hoşgünler v9.1.2</h2>
     <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
         <button onclick="login()" class="btn-save">GİRİŞ YAP</button>
     </div>
 </div>
-
-<div id="historyModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"><h3 id="histTitle" style="margin:0; color:var(--primary);">Ürün Geçmişi</h3><button onclick="closeHistory()" style="border:none; background:none; font-size:28px;">&times;</button></div><div id="histContent"></div></div></div>
-<div id="editMissingModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">Eksik Düzenle</h3><button onclick="closeEditMissing()" style="border:none; background:none; font-size:28px;">&times;</button></div><input type="hidden" id="edit_m_id"><label>Ürün Adı:</label><input type="text" id="edit_m_name" disabled style="background:#f1f5f9;"><label>Miktar / Not:</label><input type="text" id="edit_m_amount"><button onclick="updateMissing()" class="btn-save">GÜNCELLE</button><button onclick="deleteMissing()" style="background:var(--danger); margin-top:10px;" class="btn-save">EKSİĞİ SİL</button></div></div>
 
 <nav id="navbar" style="display:none;">
     <button onclick="showPage('inventory')" class="nav-btn active-nav" id="btn-inventory">📦 Ürünler</button>
@@ -61,24 +58,14 @@
 
 <div class="container">
     <section id="inventory" class="page active-page">
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="mainSearch" style="flex:1; margin-bottom:0;" placeholder="Ürün ara..." onkeyup="searchInventory()">
-            <button onclick="toggleView('inventory')" class="btn-small" style="background:var(--primary); font-size:20px;">🖼️</button>
-        </div>
-        <div id="inv_tableView" class="table-responsive">
-            <table><thead><tr><th>Ürün & Toptancı</th><th class="admin-only">Alış</th><th>Toptan</th><th>Perakende</th><th>İşlem</th></tr></thead><tbody id="invBody"></tbody></table>
-        </div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;"><input type="text" id="mainSearch" style="flex:1; margin-bottom:0;" placeholder="Ürün ara..." onkeyup="searchInventory()"><button onclick="toggleView('inventory')" class="btn-small" style="background:var(--primary); font-size:20px;">🖼️</button></div>
+        <div id="inv_tableView" class="table-responsive"><table><thead><tr><th>Ürün & Toptancı</th><th class="admin-only">Alış</th><th>Toptan</th><th>Perakende</th><th>İşlem</th></tr></thead><tbody id="invBody"></tbody></table></div>
         <div id="inv_gridView" style="display:none;"><div id="gridBody" class="grid-container"></div></div>
     </section>
 
     <section id="missing-list" class="page">
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <select id="missingFilter" style="margin:0; flex:1;" onchange="renderMissingList()"><option value="">Tüm Toptancılar</option></select>
-            <button onclick="toggleView('missing')" class="btn-small" style="background:var(--primary); font-size:20px;">🖼️</button>
-        </div>
-        <div id="miss_tableView" class="table-responsive">
-            <table><thead><tr><th>Ürün</th><th>Toptancı</th><th>Miktar</th><th>İşlem</th></tr></thead><tbody id="missingBody"></tbody></table>
-        </div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="missingFilter" style="margin:0; flex:1;" onchange="renderMissingList()"><option value="">Tüm Toptancılar</option></select><button onclick="toggleView('missing')" class="btn-small" style="background:var(--primary); font-size:20px;">🖼️</button></div>
+        <div id="miss_tableView" class="table-responsive"><table><thead><tr><th>Ürün</th><th>Toptancı</th><th>Miktar</th><th>İşlem</th></tr></thead><tbody id="missingBody"></tbody></table></div>
         <div id="miss_gridView" style="display:none;"><div id="missingGridBody" class="grid-container"></div></div>
     </section>
 
@@ -88,22 +75,22 @@
     </section>
 
     <section id="add-product" class="page">
-        <h2 id="formTitle">⚙️ Kayıt / Düzenleme</h2>
+        <h2 id="formTitle">⚙️ Ürün Kayıt</h2>
         <input type="hidden" id="p_id"><input type="text" id="p_name" placeholder="Ürün Adı"><select id="p_supplier_select"></select>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_buy" placeholder="Alış"><input type="number" id="p_sellW" placeholder="Toptan"></div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_sellR" placeholder="Perakende"><input type="text" id="p_info" placeholder="Bilgi / Raf"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_buy" placeholder="Alış Fiyatı"><input type="number" id="p_sellW" placeholder="Toptan Satış"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"><input type="number" id="p_sellR" placeholder="Perakende Satış"><input type="text" id="p_info" placeholder="Raf / Not"></div>
         <button onclick="saveProduct()" class="btn-save">💾 KAYDET</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;"><button id="deleteBtn" onclick="deleteProduct()" style="background:var(--danger); color:white; padding:14px; border:none; border-radius:12px; font-weight:700; display:none;">🗑️ ÜRÜNÜ SİL</button><button id="resetBtn" onclick="resetProductForm()" style="background:#94a3b8; color:white; padding:14px; border:none; border-radius:12px; font-weight:700; display:none;">❌ VAZGEÇ</button></div>
     </section>
 
     <section id="logs" class="page">
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="logSearch" style="flex:1; margin-bottom:0;" placeholder="Loglarda ara (Ürün, toptancı, işlem...)" onkeyup="renderLogs()">
-            <select id="logTypeFilter" onchange="renderLogs()" style="margin-bottom:0; flex:0.5;"><option value="">Tüm Türler</option><option value="yeni">✨ Yeni Ürün</option><option value="guncelleme">✏️ Güncelleme</option><option value="silme">🗑️ Silme</option><option value="odeme">💰 Toptancı/Ödeme</option><option value="eksik">📋 Eksik</option></select>
-        </div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;"><input type="text" id="logSearch" style="flex:1; margin-bottom:0;" placeholder="Heryerde ara..." onkeyup="renderLogs()"><select id="logTypeFilter" onchange="renderLogs()" style="margin-bottom:0; flex:0.5;"><option value="">Filtrele...</option><option value="yeni">✨ Yeni</option><option value="guncelleme">✏️ Güncelleme</option><option value="silme">🗑️ Silme</option><option value="odeme">💰 Toptancı</option><option value="eksik">📋 Eksik</option></select></div>
         <div id="logContent"></div>
     </section>
 </div>
+
+<div id="historyModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"><h3 id="histTitle" style="margin:0; color:var(--primary);">Ürün Geçmişi</h3><button onclick="closeHistory()" style="border:none; background:none; font-size:28px;">&times;</button></div><div id="histContent"></div></div></div>
+<div id="editMissingModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">Eksik Düzenle</h3><button onclick="closeEditMissing()" style="border:none; background:none; font-size:28px;">&times;</button></div><input type="hidden" id="edit_m_id"><label>Ürün:</label><input type="text" id="edit_m_name" disabled><label>Miktar:</label><input type="text" id="edit_m_amount"><button onclick="updateMissing()" class="btn-save">GÜNCELLE</button></div></div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyD3mtB4r5-nr-lclE7Qmqr51a0Tzmkib-A", authDomain: "hosgunler-2e576.firebaseapp.com", projectId: "hosgunler-2e576", storageBucket: "hosgunler-2e576.firebasestorage.app", messagingSenderId: "890789620690", appId: "1:890789620690:web:926f3952e4a6ff8050360b" };
@@ -121,52 +108,70 @@
         db.collection("products").onSnapshot(snap => { allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderInventory(); });
         db.collection("suppliers").orderBy("name").onSnapshot(snap => { allSuppliers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderSuppliers(); updateSupplierSelects(); });
         db.collection("missing").orderBy("date", "desc").onSnapshot(snap => { allMissing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMissingList(); });
-        db.collection("logs").limit(1000).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.serverTimestamp?.toMillis() || 0) - (a.serverTimestamp?.toMillis() || 0)); renderLogs(); });
+        db.collection("logs").limit(500).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.serverTimestamp?.toMillis() || 0) - (a.serverTimestamp?.toMillis() || 0)); renderLogs(); });
     }
 
     function addAuditLog(type, action, detail, prodName = "") { db.collection("logs").add({ user: auth.currentUser.email, type: type, action: action, detail: detail, prodName: prodName, date: new Date().toLocaleString('tr-TR'), serverTimestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
 
     function renderLogs() {
-        const typeFilter = document.getElementById('logTypeFilter').value;
-        const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+        const typeF = document.getElementById('logTypeFilter').value;
+        const search = document.getElementById('logSearch').value.toLowerCase();
         const isAdmin = auth.currentUser?.email === patronEmail;
         let h = "";
-        allLogs.filter(l => {
-            const matchesType = !typeFilter || l.type === typeFilter;
-            const content = (l.action + " " + (l.detail || "") + " " + (l.prodName || "") + " " + l.date + " " + l.user).toLowerCase();
-            return matchesType && content.includes(searchTerm);
-        }).forEach(l => {
-            h += `<div class="log-entry"><div style="padding:10px; font-size:11px; color:#64748b; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;"><span>👤 ${l.user.split('@')[0]} | ${l.date}</span>${isAdmin ? `<button onclick="deleteSingleLog('${l.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">🗑️</button>` : ''}</div><div style="padding:15px;"><b>${l.action}</b><pre class="log-detail-box">${l.detail || ''}</pre></div></div>`;
+        allLogs.filter(l => (!typeF || l.type === typeF) && (l.action+l.detail+l.prodName+l.user).toLowerCase().includes(search)).forEach(l => {
+            h += `<div class="log-entry"><div style="padding:10px; font-size:11px; color:#64748b; background:#f8fafc; display:flex; justify-content:space-between;"><span>👤 ${l.user.split('@')[0]} | ${l.date}</span>${isAdmin ? `<button onclick="db.collection('logs').doc('${l.id}').delete()" style="background:none; border:none; color:var(--danger);">🗑️</button>` : ''}</div><div style="padding:15px;"><b>${l.action}</b><pre class="log-detail-box">${l.detail}</pre></div></div>`;
         });
-        document.getElementById('logContent').innerHTML = h || "<p style='text-align:center; color:#64748b; margin-top:20px;'>Kayıt bulunamadı.</p>";
+        document.getElementById('logContent').innerHTML = h || "<p style='text-align:center; padding:20px;'>Kayıt yok.</p>";
     }
 
-    async function deleteSingleLog(id) { if(confirm("Silinsin mi?")) await db.collection("logs").doc(id).delete(); }
-
-    // TOPTANCI FONKSİYONLARI (LOGLAR EKLENDİ)
-    function renderSuppliers() {
-        const isAdmin = auth.currentUser?.email === patronEmail;
-        const f = document.getElementById('supSearch').value.toLowerCase();
-        let g = "";
-        allSuppliers.filter(s => s.name.toLowerCase().includes(f)).forEach(s => {
-            const color = s.balance > 0 ? 'var(--danger)' : 'var(--accent)';
-            g += `
-            <div class="item-card">
-                <div class="card-title">${s.name}</div>
-                <div style="font-size:18px; font-weight:800; color:${color}; margin:10px 0;">${formatTRY(s.balance)}</div>
-                <div class="card-actions" style="display:flex; gap:5px; flex-wrap:wrap;">
-                    <button class="btn-small" style="background:var(--danger)" onclick="upBal('${s.id}','${s.name}','borc')">Borç</button>
-                    <button class="btn-small" style="background:var(--accent)" onclick="upBal('${s.id}','${s.name}','odeme')">Ödeme</button>
-                    ${isAdmin ? `
-                        <button class="btn-small" style="background:var(--warning)" onclick="editSup('${s.id}','${s.name}')">✏️</button>
-                        <button class="btn-small" style="background:var(--primary)" onclick="deleteSupplier('${s.id}','${s.name}')">🗑️</button>
-                    ` : ''}
-                </div>
-            </div>`;
-        });
-        document.getElementById('supGridBody').innerHTML = g;
+    // ÜRÜN LOGLARI (FULL DETAY)
+    async function saveProduct() {
+        const id = document.getElementById('p_id').value;
+        const nP = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, info: document.getElementById('p_info').value.trim() };
+        if(!nP.name) return;
+        if(id) {
+            const o = allProducts.find(x => x.id === id);
+            let d = [];
+            if(o.name !== nP.name) d.push(`İsim: ${o.name} -> ${nP.name}`);
+            if(o.supplier !== nP.supplier) d.push(`Toptancı: ${o.supplier} -> ${nP.supplier}`);
+            if(o.buyPrice !== nP.buyPrice) d.push(`Alış: ${formatTRY(o.buyPrice)} -> ${formatTRY(nP.buyPrice)}`);
+            if(o.sellWholesale !== nP.sellWholesale) d.push(`Toptan: ${formatTRY(o.sellWholesale)} -> ${formatTRY(nP.sellWholesale)}`);
+            if(o.sellRetail !== nP.sellRetail) d.push(`Perakende: ${formatTRY(o.sellRetail)} -> ${formatTRY(nP.sellRetail)}`);
+            if((o.info||"") !== nP.info) d.push(`Not: ${o.info||'Yok'} -> ${nP.info}`);
+            if(d.length > 0) { await db.collection("products").doc(id).update(nP); addAuditLog('guncelleme', `✏️ Ürün Güncellendi: ${nP.name}`, d.join('\n'), nP.name); }
+        } else {
+            await db.collection("products").add(nP);
+            addAuditLog('yeni', `✨ Yeni Ürün Eklendi: ${nP.name}`, `Toptancı: ${nP.supplier}\nAlış: ${formatTRY(nP.buyPrice)}\nToptan: ${formatTRY(nP.sellWholesale)}\nPerakende: ${formatTRY(nP.sellRetail)}\nNot: ${nP.info||'-'}`, nP.name);
+        }
+        resetProductForm(); showPage('inventory');
     }
 
+    async function deleteProduct() {
+        const id = document.getElementById('p_id').value;
+        const p = allProducts.find(x => x.id === id);
+        if(id && p && confirm(`"${p.name}" silinsin mi?`)) {
+            await db.collection("products").doc(id).delete();
+            addAuditLog('silme', `🗑️ Ürün Tamamen Silindi: ${p.name}`, `SİLİNEN BİLGİLER:\nToptancı: ${p.supplier}\nSon Perakende: ${formatTRY(p.sellRetail)}\nSon Alış: ${formatTRY(p.buyPrice)}`, p.name);
+            resetProductForm(); showPage('inventory');
+        }
+    }
+
+    // EKSİK LOGLARI
+    function markAsMissing(id, n, s) {
+        const m = prompt(n + " miktarı?");
+        if(m) {
+            db.collection("missing").add({name:n, supplier:s, amount:m, status:'bekliyor', date:new Date().toLocaleString('tr-TR')});
+            addAuditLog('eksik', `📋 Eksik Yazıldı: ${n}`, `Ürün: ${n}\nMiktar: ${m}\nToptancı: ${s}`, n);
+        }
+    }
+    async function markSupplied(id, n) {
+        if(confirm("Rafa eklendi mi?")) {
+            await db.collection("missing").doc(id).update({status:'tamam'});
+            addAuditLog('eksik', `✅ Eksik Tamamlandı: ${n}`, `Ürün: ${n}\nDurum: Raf Bilgisi Güncellendi / Temin Edildi`, n);
+        }
+    }
+
+    // TOPTANCI LOGLARI
     async function upBal(id, n, t) {
         const v = prompt(n + " tutar:");
         if(v && !isNaN(v)) {
@@ -175,51 +180,80 @@
             const chg = parseFloat(v);
             const nb = (t === 'borc' ? oldB + chg : oldB - chg);
             await db.collection("suppliers").doc(id).update({ balance: nb });
-            addAuditLog('odeme', `💰 Toptancı İşlemi: ${n}`, `Toptancı: ${n}\nİşlem: ${t === 'borc' ? 'Borç Eklendi' : 'Ödeme Yapıldı'}\nTutar: ${formatTRY(chg)}\nEski Bakiye: ${formatTRY(oldB)}\nYeni Bakiye: ${formatTRY(nb)}`, n);
+            addAuditLog('odeme', `💰 Bakiye Değişimi: ${n}`, `İşlem: ${t==='borc'?'Borç Girişi':'Ödeme Yapıldı'}\nTutar: ${formatTRY(chg)}\nEski Bakiye: ${formatTRY(oldB)}\nYeni Bakiye: ${formatTRY(nb)}`, n);
         }
     }
-
-    function addSupplierPrompt() {
-        const n = prompt("Toptancı Adı:");
-        if(n) {
-            db.collection("suppliers").add({ name: n, balance: 0 });
-            addAuditLog('odeme', `🚚 Yeni Toptancı: ${n}`, `Toptancı dükkan sistemine eklendi.`, n);
-        }
-    }
-
-    function editSup(id, old) {
-        const n = prompt("Yeni isim:", old);
-        if(n && n !== old) {
-            db.collection("suppliers").doc(id).update({ name: n });
-            addAuditLog('odeme', `✏️ Toptancı İsmi Değişti`, `Eski: ${old}\nYeni: ${n}`, n);
-        }
-    }
-
     async function deleteSupplier(id, name) {
-        if(confirm(`"${name}" adlı toptancıyı silmek istediğine emin misin? Bu işlem sadece toptancıyı siler, loglar kalır.`)) {
+        const s = allSuppliers.find(x => x.id === id);
+        if(confirm(`"${name}" silinsin mi?`)) {
             await db.collection("suppliers").doc(id).delete();
-            addAuditLog('silme', `🗑️ Toptancı Silindi: ${name}`, `Toptancı kaydı dükkan sisteminden kaldırıldı.`, name);
+            addAuditLog('silme', `🗑️ Toptancı Silindi: ${name}`, `Silindiği andaki bakiyesi: ${formatTRY(s.balance)}`, name);
         }
     }
 
-    // Diğer Fonksiyonlar (Aynı Kalıyor)
-    function markAsMissing(id, n, s) { const m = prompt(n + " için miktar?"); if(m) { db.collection("missing").add({name:n, supplier:s, amount:m, status:'bekliyor', date:new Date().toLocaleString('tr-TR')}); addAuditLog('eksik', `📋 Eksik Yazıldı: ${n}`, `Ürün: ${n}\nMiktar: ${m}\nToptancı: ${s}`, n); } }
-    async function markSupplied(id, n) { if(confirm("Geldi mi?")) { await db.collection("missing").doc(id).update({status:'tamam'}); addAuditLog('eksik', `✅ Temin Edildi: ${n}`, `Ürün: ${n}\nRafa eklendi.`, n); } }
-    function openEditMissing(id) { const m = allMissing.find(x => x.id === id); document.getElementById('edit_m_id').value = id; document.getElementById('edit_m_name').value = m.name; document.getElementById('edit_m_amount').value = m.amount; document.getElementById('editMissingModal').style.display = 'flex'; }
-    function closeEditMissing() { document.getElementById('editMissingModal').style.display = 'none'; }
-    async function updateMissing() { const id = document.getElementById('edit_m_id').value; const newAmt = document.getElementById('edit_m_amount').value; const m = allMissing.find(x => x.id === id); await db.collection("missing").doc(id).update({ amount: newAmt }); addAuditLog('eksik', `✏️ Eksik Güncellendi: ${m.name}`, `Ürün: ${m.name}\nYeni Miktar: ${newAmt}`, m.name); closeEditMissing(); }
-    async function deleteMissing() { const id = document.getElementById('edit_m_id').value; const m = allMissing.find(x => x.id === id); if(confirm("Silinsin mi?")) { await db.collection("missing").doc(id).delete(); addAuditLog('eksik', `🗑️ Eksik Silindi: ${m.name}`, `Ürün: ${m.name}`, m.name); closeEditMissing(); } }
-    function renderMissingList() { const f = document.getElementById('missingFilter').value; const isAdmin = auth.currentUser?.email === patronEmail; let t = "", g = ""; allMissing.filter(m => m.status === 'bekliyor' && (!f || m.supplier === f)).forEach(m => { const actions = `<button class="btn-small" style="background:var(--accent)" onclick="markSupplied('${m.id}','${m.name}')">✓</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="openEditMissing('${m.id}')">✏️</button>` : ''}`; t += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${actions}</td></tr>`; g += `<div class="item-card"><div style="font-size:14px; color:var(--danger); font-weight:800;">Miktar: ${m.amount}</div><div class="card-title">${m.name}</div><div style="font-size:12px; color:#64748b; margin-bottom:8px;">🚚 ${m.supplier}</div><div style="display:flex; gap:5px;">${actions}</div></div>`; }); document.getElementById('missingBody').innerHTML = t; document.getElementById('missingGridBody').innerHTML = g; }
-    function renderInventory() { const isAdmin = auth.currentUser?.email === patronEmail; let t = "", g = ""; [...allProducts].sort((a,b) => a.name.localeCompare(b.name, 'tr')).forEach(p => { const hBtn = isAdmin ? `<button class="btn-small" style="background:var(--info); margin-left:4px;" onclick="showHistory('${p.name.replace(/'/g, "\\'")}')">🕒</button>` : ''; t += `<tr><td><b>${p.name}</b><br><small>${p.supplier}</small></td><td class="admin-only" style="color:var(--danger); font-weight:700;">${formatTRY(p.buyPrice)}</td><td>${formatTRY(p.sellWholesale)}</td><td>${formatTRY(p.sellRetail)}</td><td><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','p.supplier')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}`:''}</td></tr>`; g += `<div class="item-card"><div class="card-title">${p.name}</div><div style="font-size:12px; color:#64748b;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div>${isAdmin ? `<div class="card-price-row" style="color:var(--danger); font-weight:700;"><span>Alış:</span> <span>${formatTRY(p.buyPrice)}</span></div>` : ''}<div class="card-price-row"><span>Toptan:</span> <span>${formatTRY(p.sellWholesale)}</span></div><div class="card-price-row" style="font-size:18px; font-weight:800; color:var(--accent); border:none;"><span>Perakende:</span> <span>${formatTRY(p.sellRetail)}</span></div><div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-small" style="background:var(--primary); flex:1;" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}` : ''}</div></div>`; }); document.getElementById('invBody').innerHTML = t; document.getElementById('gridBody').innerHTML = g; searchInventory(); }
-    async function saveProduct() { const id = document.getElementById('p_id').value; const nP = { name: document.getElementById('p_name').value.trim(), supplier: document.getElementById('p_supplier_select').value, buyPrice: parseFloat(document.getElementById('p_buy').value)||0, sellWholesale: parseFloat(document.getElementById('p_sellW').value)||0, sellRetail: parseFloat(document.getElementById('p_sellR').value)||0, info: document.getElementById('p_info').value.trim() }; if(!nP.name) return; if(id) { const oP = allProducts.find(x => x.id === id); let d = []; if(oP.supplier !== nP.supplier) d.push(`🚚 ${oP.supplier} -> ${nP.supplier}`); if(oP.name !== nP.name) d.push(`İsim: ${oP.name} -> ${nP.name}`); if(oP.buyPrice !== nP.buyPrice) d.push(`Alış: ${formatTRY(oP.buyPrice)} -> ${formatTRY(nP.buyPrice)}`); if(oP.sellWholesale !== nP.sellWholesale) d.push(`Toptan: ${formatTRY(oP.sellWholesale)} -> ${formatTRY(nP.sellWholesale)}`); if(oP.sellRetail !== nP.sellRetail) d.push(`Perakende: ${formatTRY(oP.sellRetail)} -> ${formatTRY(nP.sellRetail)}`); if((oP.info||"") !== nP.info) d.push(`Bilgi: ${oP.info||'Yok'} -> ${nP.info}`); if(d.length > 0) { await db.collection("products").doc(id).update(nP); addAuditLog('guncelleme', `✏️ Güncellendi: ${nP.name}`, d.join('\n'), nP.name); } } else { await db.collection("products").add(nP); addAuditLog('yeni', `✨ Yeni Ürün: ${nP.name}`, `🚚 ${nP.supplier}\n💰 ${formatTRY(nP.sellRetail)}`, nP.name); } resetProductForm(); showPage('inventory'); }
-    async function deleteProduct() { const id = document.getElementById('p_id').value; const p = allProducts.find(x => x.id === id); if(!id || !p) return; if(confirm(`"${p.name}" silinsin mi?`)) { await db.collection("products").doc(id).delete(); addAuditLog('silme', `🗑️ Ürün Silindi: ${p.name}`, `Toptancı: ${p.supplier}`, p.name); resetProductForm(); showPage('inventory'); } }
-    function showHistory(n) { document.getElementById('histTitle').innerText = n + " Geçmişi"; let h = ""; const hist = allLogs.filter(l => l.prodName === n); if(hist.length === 0) h = "<p>Kayıt yok.</p>"; else hist.forEach(l => h += `<div style="margin-bottom:12px; border-left:4px solid var(--info); padding-left:12px;"><small>${l.date}</small><br><b>${l.action}</b><pre style="font-size:11px; background:#f8fafc; padding:5px;">${l.detail}</pre></div>`); document.getElementById('histContent').innerHTML = h; document.getElementById('historyModal').style.display = 'flex'; }
-    function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
-    function resetProductForm() { document.getElementById('p_id').value = ""; document.getElementById('resetBtn').style.display = "none"; document.getElementById('deleteBtn').style.display = "none"; document.querySelectorAll('#add-product input').forEach(i => i.value = ""); document.getElementById('p_supplier_select').value = ""; document.getElementById('formTitle').innerText = "⚙️ Kayıt / Düzenleme"; }
-    function showPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); if(p !== 'inventory') { document.getElementById('mainSearch').value = ""; searchInventory(); } }
+    // STANDART FONKSİYONLAR
+    function renderInventory() {
+        const isAdmin = auth.currentUser?.email === patronEmail;
+        let t = "", g = "";
+        [...allProducts].sort((a,b) => a.name.localeCompare(b.name, 'tr')).forEach(p => {
+            const hBtn = isAdmin ? `<button class="btn-small" style="background:var(--info); margin-left:4px;" onclick="showHistory('${p.name.replace(/'/g, "\\'")}')">🕒</button>` : '';
+            t += `<tr><td><b>${p.name}</b><br><small>${p.supplier}</small></td><td class="admin-only" style="color:var(--danger); font-weight:700;">${formatTRY(p.buyPrice)}</td><td>${formatTRY(p.sellWholesale)}</td><td>${formatTRY(p.sellRetail)}</td><td><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}`:''}</td></tr>`;
+            g += `<div class="item-card"><div class="card-title">${p.name}</div><div style="font-size:12px; color:#64748b;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div>${isAdmin ? `<div class="card-price-row" style="color:var(--danger); font-weight:700;"><span>Alış:</span> <span>${formatTRY(p.buyPrice)}</span></div>` : ''}<div class="card-price-row"><span>Toptan:</span> <span>${formatTRY(p.sellWholesale)}</span></div><div class="card-price-row" style="font-size:18px; font-weight:800; color:var(--accent); border:none;"><span>Perakende:</span> <span>${formatTRY(p.sellRetail)}</span></div><div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-small" style="background:var(--primary); flex:1;" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}` : ''}</div></div>`;
+        });
+        document.getElementById('invBody').innerHTML = t; document.getElementById('gridBody').innerHTML = g; searchInventory();
+    }
+    function renderSuppliers() {
+        const isAdmin = auth.currentUser?.email === patronEmail;
+        const f = document.getElementById('supSearch').value.toLowerCase();
+        let g = "";
+        allSuppliers.filter(s => s.name.toLowerCase().includes(f)).forEach(s => {
+            const color = s.balance > 0 ? 'var(--danger)' : 'var(--accent)';
+            g += `<div class="item-card"><div class="card-title">${s.name}</div><div style="font-size:18px; font-weight:800; color:${color}; margin:10px 0;">${formatTRY(s.balance)}</div><div style="display:flex; gap:5px; flex-wrap:wrap;"><button class="btn-small" style="background:var(--danger)" onclick="upBal('${s.id}','${s.name}','borc')">Borç</button><button class="btn-small" style="background:var(--accent)" onclick="upBal('${s.id}','${s.name}','odeme')">Ödeme</button>${isAdmin?`<button class="btn-small" style="background:var(--warning)" onclick="editSup('${s.id}','${s.name}')">✏️</button><button class="btn-small" style="background:var(--primary)" onclick="deleteSupplier('${s.id}','${s.name}')">🗑️</button>`:''}</div></div>`;
+        });
+        document.getElementById('supGridBody').innerHTML = g;
+    }
+    function renderMissingList() {
+        const f = document.getElementById('missingFilter').value;
+        const isAdmin = auth.currentUser?.email === patronEmail;
+        let t = "", g = "";
+        allMissing.filter(m => m.status === 'bekliyor' && (!f || m.supplier === f)).forEach(m => {
+            const act = `<button class="btn-small" style="background:var(--accent)" onclick="markSupplied('${m.id}','${m.name}')">✓</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="openEditMissing('${m.id}','${m.name}','${m.amount}')">✏️</button>` : ''}`;
+            t += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${act}</td></tr>`;
+            g += `<div class="item-card"><div style="font-size:14px; color:var(--danger); font-weight:800;">${m.amount}</div><div class="card-title">${m.name}</div><div style="font-size:12px; color:#64748b;">🚚 ${m.supplier}</div><div style="display:flex; gap:5px; margin-top:5px;">${act}</div></div>`;
+        });
+        document.getElementById('missingBody').innerHTML = t; document.getElementById('missingGridBody').innerHTML = g;
+    }
+    function openEditMissing(id, n, a) { document.getElementById('edit_m_id').value = id; document.getElementById('edit_m_name').value = n; document.getElementById('edit_m_amount').value = a; document.getElementById('editMissingModal').style.display='flex'; }
+    function closeEditMissing() { document.getElementById('editMissingModal').style.display='none'; }
+    async function updateMissing() {
+        const id = document.getElementById('edit_m_id').value; const amt = document.getElementById('edit_m_amount').value;
+        const m = allMissing.find(x => x.id === id);
+        await db.collection("missing").doc(id).update({amount: amt});
+        addAuditLog('eksik', `✏️ Eksik Düzenlendi: ${m.name}`, `Yeni Miktar: ${amt}`, m.name); closeEditMissing();
+    }
+    function goToEdit(id) {
+        const p = allProducts.find(x => x.id === id);
+        document.getElementById('p_id').value = id; document.getElementById('p_name').value = p.name;
+        document.getElementById('p_supplier_select').value = p.supplier; document.getElementById('p_buy').value = p.buyPrice;
+        document.getElementById('p_sellW').value = p.sellWholesale; document.getElementById('p_sellR').value = p.sellRetail;
+        document.getElementById('p_info').value = p.info || "";
+        document.getElementById('resetBtn').style.display = "block"; document.getElementById('deleteBtn').style.display = "block";
+        document.getElementById('formTitle').innerText = "✏️ Düzenle: " + p.name; showPage('add-product');
+    }
+    function resetProductForm() { document.getElementById('p_id').value = ""; document.querySelectorAll('#add-product input').forEach(i => i.value = ""); document.getElementById('formTitle').innerText = "⚙️ Ürün Kayıt"; document.getElementById('resetBtn').style.display = "none"; document.getElementById('deleteBtn').style.display = "none"; }
+    function showPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active-page')); document.getElementById(p).classList.add('active-page'); document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active-nav')); document.getElementById('btn-'+p)?.classList.add('active-nav'); }
     function toggleView(t) { views[t] = views[t] === 'table' ? 'grid' : 'table'; document.getElementById((t==='inventory'?'inv_':'miss_')+'tableView').style.display = views[t] === 'table' ? 'block' : 'none'; document.getElementById((t==='inventory'?'inv_':'miss_')+'gridView').style.display = views[t] === 'grid' ? 'block' : 'none'; }
     function searchInventory() { const f = document.getElementById('mainSearch').value.toLowerCase(); document.querySelectorAll('#invBody tr, #gridBody .item-card').forEach(el => el.style.display = el.innerText.toLowerCase().includes(f) ? "" : "none"); }
-    function updateSupplierSelects() { let h = '<option value="">Toptancı Seç...</option>'; allSuppliers.forEach(s => h += `<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML = h; document.getElementById('missingFilter').innerHTML = '<option value="">Tüm Toptancılar</option>' + h; }
+    function updateSupplierSelects() { let h = '<option value="">Seçiniz...</option>'; allSuppliers.forEach(s => h += `<option value="${s.name}">${s.name}</option>`); document.getElementById('p_supplier_select').innerHTML = h; document.getElementById('missingFilter').innerHTML = '<option value="">Tüm Toptancılar</option>' + h; }
+    function showHistory(n) {
+        document.getElementById('histTitle').innerText = n + " Geçmişi";
+        let h = ""; const hist = allLogs.filter(l => l.prodName === n);
+        hist.forEach(l => h += `<div style="margin-bottom:12px; border-left:4px solid var(--info); padding-left:12px;"><small>${l.date}</small><br><b>${l.action}</b><pre style="font-size:11px; background:#f8fafc; padding:5px;">${l.detail}</pre></div>`);
+        document.getElementById('histContent').innerHTML = h || "Kayıt yok."; document.getElementById('historyModal').style.display = 'flex';
+    }
+    function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
+    function addSupplierPrompt() { const n = prompt("Toptancı Adı:"); if(n) { db.collection("suppliers").add({name:n, balance:0}); addAuditLog('odeme', `🚚 Toptancı Eklendi: ${n}`, "Yeni toptancı sisteme dahil edildi.", n); } }
+    function editSup(id, old) { const n = prompt("Yeni isim:", old); if(n && n !== old) { db.collection("suppliers").doc(id).update({name: n}); addAuditLog('odeme', `✏️ Toptancı Adı Güncellendi`, `Eski: ${old}\nYeni: ${n}`, n); } }
     function logout() { auth.signOut().then(() => location.reload()); }
 </script>
 </body>
