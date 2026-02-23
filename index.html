@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hoşgünler v9.0.8</title>
+    <title>Hoşgünler v9.0.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-    <h2 style="font-weight: 800;">Hoşgünler v9.0.8</h2>
+    <h2 style="font-weight: 800;">Hoşgünler v9.0.9</h2>
     <div style="width:100%; max-width:350px; background:white; padding:30px; border-radius:20px; color:black;">
         <input type="text" id="loginUser" placeholder="Kullanıcı Adı">
         <input type="password" id="loginPass" placeholder="Şifre">
@@ -48,7 +48,6 @@
 </div>
 
 <div id="historyModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"><h3 id="histTitle" style="margin:0; color:var(--primary);">Ürün Geçmişi</h3><button onclick="closeHistory()" style="border:none; background:none; font-size:28px;">&times;</button></div><div id="histContent"></div></div></div>
-
 <div id="editMissingModal"><div class="modal-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">Eksik Düzenle</h3><button onclick="closeEditMissing()" style="border:none; background:none; font-size:28px;">&times;</button></div><input type="hidden" id="edit_m_id"><label>Ürün Adı:</label><input type="text" id="edit_m_name" disabled style="background:#f1f5f9;"><label>Miktar / Not:</label><input type="text" id="edit_m_amount"><button onclick="updateMissing()" class="btn-save">GÜNCELLE</button><button onclick="deleteMissing()" style="background:var(--danger); margin-top:10px;" class="btn-save">EKSİĞİ SİL</button></div></div>
 
 <nav id="navbar" style="display:none;">
@@ -98,8 +97,10 @@
     </section>
 
     <section id="logs" class="page">
-        <div id="adminLogControls"></div>
-        <select id="logTypeFilter" onchange="renderLogs()" style="margin-bottom:15px;"><option value="">Tüm Loglar</option><option value="yeni">✨ Yeni Kayıtlar</option><option value="guncelleme">✏️ Güncellemeler</option><option value="silme">🗑️ Silinenler</option><option value="odeme">💰 Toptancı İşlemleri</option><option value="eksik">📋 Eksik Listesi</option></select>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="logSearch" style="flex:1; margin-bottom:0;" placeholder="Loglarda ara (Ürün, işlem, tarih...)" onkeyup="renderLogs()">
+            <select id="logTypeFilter" onchange="renderLogs()" style="margin-bottom:0; flex:0.5;"><option value="">Tüm Türler</option><option value="yeni">✨ Yeni</option><option value="guncelleme">✏️ Güncelleme</option><option value="silme">🗑️ Silme</option><option value="odeme">💰 Toptancı</option><option value="eksik">📋 Eksik</option></select>
+        </div>
         <div id="logContent"></div>
     </section>
 </div>
@@ -120,37 +121,34 @@
         db.collection("products").onSnapshot(snap => { allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderInventory(); });
         db.collection("suppliers").orderBy("name").onSnapshot(snap => { allSuppliers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderSuppliers(); updateSupplierSelects(); });
         db.collection("missing").orderBy("date", "desc").onSnapshot(snap => { allMissing = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderMissingList(); });
-        db.collection("logs").limit(500).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.serverTimestamp?.toMillis() || 0) - (a.serverTimestamp?.toMillis() || 0)); renderLogs(); });
+        db.collection("logs").limit(1000).onSnapshot(snap => { allLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => (b.serverTimestamp?.toMillis() || 0) - (a.serverTimestamp?.toMillis() || 0)); renderLogs(); });
     }
 
     function addAuditLog(type, action, detail, prodName = "") { db.collection("logs").add({ user: auth.currentUser.email, type: type, action: action, detail: detail, prodName: prodName, date: new Date().toLocaleString('tr-TR'), serverTimestamp: firebase.firestore.FieldValue.serverTimestamp() }); }
 
-    // LOG SİLME FONKSİYONLARI
-    async function deleteSingleLog(id) { if(confirm("Bu kaydı silmek istediğine emin misin?")) await db.collection("logs").doc(id).delete(); }
-    async function clearAllLogs() {
-        if(confirm("TÜM LOGLAR silinecek! Emin misin?")) {
-            const batch = db.batch();
-            allLogs.forEach(l => batch.delete(db.collection("logs").doc(l.id)));
-            await batch.commit();
-            alert("Temizlendi.");
-        }
-    }
-
     function renderLogs() {
-        const f = document.getElementById('logTypeFilter').value;
+        const typeFilter = document.getElementById('logTypeFilter').value;
+        const searchTerm = document.getElementById('logSearch').value.toLowerCase();
         const isAdmin = auth.currentUser?.email === patronEmail;
-        document.getElementById('adminLogControls').innerHTML = isAdmin ? `<button onclick="clearAllLogs()" style="background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; margin-bottom:15px; width:100%;">🗑️ TÜM LOGLARI TEMİZLE</button>` : "";
         let h = "";
-        allLogs.filter(l => !f || l.type === f).forEach(l => {
+        
+        allLogs.filter(l => {
+            const matchesType = !typeFilter || l.type === typeFilter;
+            const content = (l.action + " " + (l.detail || "") + " " + l.date + " " + l.user).toLowerCase();
+            const matchesSearch = content.includes(searchTerm);
+            return matchesType && matchesSearch;
+        }).forEach(l => {
             h += `<div class="log-entry"><div style="padding:10px; font-size:11px; color:#64748b; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;"><span>👤 ${l.user.split('@')[0]} | ${l.date}</span>${isAdmin ? `<button onclick="deleteSingleLog('${l.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">🗑️</button>` : ''}</div><div style="padding:15px;"><b>${l.action}</b><pre class="log-detail-box">${l.detail || ''}</pre></div></div>`;
         });
-        document.getElementById('logContent').innerHTML = h;
+        document.getElementById('logContent').innerHTML = h || "<p style='text-align:center; color:#64748b; margin-top:20px;'>Eşleşen kayıt bulunamadı.</p>";
     }
 
-    // DİĞER FONKSİYONLAR (v9.0.7 İLE AYNI)
+    async function deleteSingleLog(id) { if(confirm("Bu kaydı silmek istediğine emin misin?")) await db.collection("logs").doc(id).delete(); }
+
+    // Ürün & Eksik Fonksiyonları (v9.0.8 ile aynı, bozulmaması için korundu)
     function openEditMissing(id) { const m = allMissing.find(x => x.id === id); document.getElementById('edit_m_id').value = id; document.getElementById('edit_m_name').value = m.name; document.getElementById('edit_m_amount').value = m.amount; document.getElementById('editMissingModal').style.display = 'flex'; }
     function closeEditMissing() { document.getElementById('editMissingModal').style.display = 'none'; }
-    async function updateMissing() { const id = document.getElementById('edit_m_id').value; const newAmt = document.getElementById('edit_m_amount').value; const m = allMissing.find(x => x.id === id); await db.collection("missing").doc(id).update({ amount: newAmt }); addAuditLog('eksik', `✏️ Eksik Güncellendi: ${m.name}`, `Eski: ${m.amount}\nYeni: ${newAmt}`, m.name); closeEditMissing(); }
+    async function updateMissing() { const id = document.getElementById('edit_m_id').value; const newAmt = document.getElementById('edit_m_amount').value; const m = allMissing.find(x => x.id === id); await db.collection("missing").doc(id).update({ amount: newAmt }); addAuditLog('eksik', `✏️ Eksik Güncellendi: ${m.name}`, `Yeni: ${newAmt}`, m.name); closeEditMissing(); }
     async function deleteMissing() { const id = document.getElementById('edit_m_id').value; const m = allMissing.find(x => x.id === id); if(confirm("Silinsin mi?")) { await db.collection("missing").doc(id).delete(); addAuditLog('eksik', `🗑️ Eksik Silindi`, `Ürün: ${m.name}`, m.name); closeEditMissing(); } }
     function renderMissingList() { const f = document.getElementById('missingFilter').value; const isAdmin = auth.currentUser?.email === patronEmail; let t = "", g = ""; allMissing.filter(m => m.status === 'bekliyor' && (!f || m.supplier === f)).forEach(m => { const actions = `<button class="btn-small" style="background:var(--accent)" onclick="markSupplied('${m.id}','${m.name}')">✓</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="openEditMissing('${m.id}')">✏️</button>` : ''}`; t += `<tr><td><b>${m.name}</b></td><td>${m.supplier}</td><td>${m.amount}</td><td>${actions}</td></tr>`; g += `<div class="item-card"><div style="font-size:14px; color:var(--danger); font-weight:800;">Miktar: ${m.amount}</div><div class="card-title">${m.name}</div><div style="font-size:12px; color:#64748b; margin-bottom:8px;">🚚 ${m.supplier}</div><div style="display:flex; gap:5px;">${actions}</div></div>`; }); document.getElementById('missingBody').innerHTML = t; document.getElementById('missingGridBody').innerHTML = g; }
     function renderInventory() { const isAdmin = auth.currentUser?.email === patronEmail; let t = "", g = ""; [...allProducts].sort((a,b) => a.name.localeCompare(b.name, 'tr')).forEach(p => { const hBtn = isAdmin ? `<button class="btn-small" style="background:var(--info); margin-left:4px;" onclick="showHistory('${p.name.replace(/'/g, "\\'")}')">🕒</button>` : ''; t += `<tr><td><b>${p.name}</b><br><small>${p.supplier}</small></td><td class="admin-only" style="color:var(--danger); font-weight:700;">${formatTRY(p.buyPrice)}</td><td>${formatTRY(p.sellWholesale)}</td><td>${formatTRY(p.sellRetail)}</td><td><button class="btn-small" style="background:var(--primary)" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin?`<button class="btn-small" style="background:var(--warning); margin-left:4px;" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}`:''}</td></tr>`; g += `<div class="item-card"><div class="card-title">${p.name}</div><div style="font-size:12px; color:#64748b;">🚚 ${p.supplier} | 📍 ${p.info || '-'}</div>${isAdmin ? `<div class="card-price-row" style="color:var(--danger); font-weight:700;"><span>Alış:</span> <span>${formatTRY(p.buyPrice)}</span></div>` : ''}<div class="card-price-row"><span>Toptan:</span> <span>${formatTRY(p.sellWholesale)}</span></div><div class="card-price-row" style="font-size:18px; font-weight:800; color:var(--accent); border:none;"><span>Perakende:</span> <span>${formatTRY(p.sellRetail)}</span></div><div style="display:flex; gap:5px; margin-top:5px;"><button class="btn-small" style="background:var(--primary); flex:1;" onclick="markAsMissing('${p.id}','${p.name}','${p.supplier}')">Eksik</button>${isAdmin ? `<button class="btn-small" style="background:var(--warning)" onclick="goToEdit('${p.id}')">✏️</button>${hBtn}` : ''}</div></div>`; }); document.getElementById('invBody').innerHTML = t; document.getElementById('gridBody').innerHTML = g; searchInventory(); }
